@@ -68,7 +68,8 @@ The five named brand colors, authoritative in `argusappsec/argus` under
 _Avoid_: theme, brand colors, color scheme
 
 **Token**:
-A semantic role in this repository's design system — `primary`, `accent`, `bg`,
-`text`, `border`. A Token names a job, never a color, and its value may differ
-between light and dark because no Palette color reads accessibly on both.
+A semantic role in this repository's design system — `bg`, `surface`, `text`,
+`text-muted`, `border`, `primary`, `accent`. A Token names a job, never a color,
+and its value may differ between light and dark because no Palette color reads
+accessibly on both. There is no `secondary`: verdigris is `primary` in dark.
 _Avoid_: variable, custom property, CSS var

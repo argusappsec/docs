@@ -3,3 +3,7 @@
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Last, so the Token layer's Starlight mapping replaces the default one that
+   `@astrojs/starlight-tailwind` wires to Tailwind's grey and indigo scales. */
+@import '../tokens/tokens.css';

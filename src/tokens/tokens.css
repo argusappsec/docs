@@ -1,0 +1,172 @@
+/*
+ * The design system: one Palette transcription, one Token layer, two
+ * consumers. ADR 0004 records the reasoning; what follows is its execution.
+ *
+ * Read it in three parts:
+ *   1. the Palette — the five hand-copied brand colours, and the only literal
+ *      colour values in this repository;
+ *   2. the Tokens — role names, light values in `@theme`, dark values as the
+ *      four-line override that is all the theme actually changes;
+ *   3. the consumers — Tailwind reads the `@theme` block directly, Starlight
+ *      reads its own `--sl-color-*` properties, and those are routed onto the
+ *      same Tokens here so neither can drift from the other.
+ *
+ * The one-line marker comments below are load-bearing: `stylesheet.ts` finds
+ * the blocks by them, so the build can re-measure ADR 0004's contrast table on
+ * every run. Move a block away from its marker and the check goes quiet.
+ */
+
+/*
+ * Transcribed by hand from `argusappsec/argus` under `brand/`, which is an
+ * asset folder referenced by no code. ADR 0004 accepts that these five values
+ * exist in two repositories and can drift; the annotations are what make a
+ * drift visible instead of silent.
+ *
+ * Nothing else in this repository may write a colour literal. Every other
+ * Token is a `color-mix()` of these — the one exception is `surface` in light,
+ * which the ADR's table names as `white`: not a brand colour, the absence of
+ * one.
+ */
+
+/* @palette */
+:root {
+  --palette-night: #0b2239; /* night — text, the pupil */
+  --palette-peacock-teal: #0e6e63; /* peacock teal — the feather */
+  --palette-verdigris: #16a08c; /* verdigris — the inner ring */
+  --palette-ocellus-gold: #e9b44c; /* ocellus gold — the outer ring */
+  --palette-paper: #f4f7f6; /* paper — light grounds, the highlight */
+}
+
+/*
+ * `static`, because these Tokens are not only Tailwind's theme: the Starlight
+ * mapping below reads every one of them from plain CSS, where Tailwind cannot
+ * see the usage and would otherwise drop the Token as unused.
+ *
+ * `text-muted` and `border` are declared once and never overridden. They are
+ * written in terms of `text` and `bg` rather than of the Palette, so flipping
+ * those two flips these as well — which is the whole return on naming a Token
+ * after its role instead of after a colour.
+ */
+
+/* @tokens light */
+@theme static {
+  --color-bg: var(--palette-paper);
+  --color-surface: white;
+  --color-text: var(--palette-night);
+  --color-text-muted: color-mix(in oklab, var(--color-text) 65%, var(--color-bg));
+  --color-border: color-mix(in oklab, var(--color-text) 20%, var(--color-bg));
+  --color-primary: var(--palette-peacock-teal);
+  --color-accent: var(--palette-ocellus-gold);
+}
+
+/*
+ * Unlayered, like the `@theme` block above it: Tailwind emits its theme
+ * variables outside the cascade layers, and a layered override — however
+ * specific — loses to an unlayered rule. The two blocks have to sit at the
+ * same level for specificity to be what decides between them.
+ *
+ * Matched on `:not([data-theme='light'])` rather than on `[data-theme=dark]`
+ * so that a document rendered before Starlight's inline theme script runs — or
+ * with scripting off — is dark, which is what Starlight's own stylesheet does
+ * with the semantic aside colours we leave it in charge of. Disagreeing with
+ * it would show up as light-mode chrome around dark-mode callouts.
+ *
+ * `accent` is absent because ocellus gold is the same value in both themes.
+ * There is no `secondary`: verdigris is `primary` in dark.
+ *
+ * `surface` is written as `bg` lifted towards `text`, not as `text` diluted
+ * into `bg`, because Tailwind emits an `@supports` fallback that keeps the
+ * mix's first colour. A browser without `color-mix()` should lose the lift,
+ * not paint the sidebar in the text colour.
+ */
+
+/* @tokens dark */
+:root:not([data-theme='light']) {
+  --color-bg: var(--palette-night);
+  --color-surface: color-mix(in oklab, var(--color-bg) 94%, var(--color-text));
+  --color-text: var(--palette-paper);
+  --color-primary: var(--palette-verdigris);
+}
+
+@layer utilities {
+  /*
+   * Starlight reads its own custom properties, so every one of them that
+   * carries a colour is routed onto a Token here. Nothing below chooses a
+   * colour — it only says which role Starlight's chrome is asking for.
+   *
+   * The routing is theme-blind on purpose: the Tokens already flip, so this
+   * block is written once and Starlight's own light and dark blocks are
+   * replaced wholesale rather than patched twice.
+   *
+   * Two of the pairs Starlight assembles out of these are pairs ADR 0004
+   * measured: `--sl-color-text` over `--sl-color-bg` is `text` over `bg`, and
+   * `--sl-color-text-invert` over `--sl-color-bg-accent` is `bg` over
+   * `primary`. Both are asserted by the build.
+   */
+  :root,
+  ::backdrop {
+    /* Starlight's neutral ramp runs from the text end to the background end. */
+    --sl-color-white: var(--color-text);
+    --sl-color-gray-1: var(--color-text);
+    --sl-color-gray-2: var(--color-text);
+    --sl-color-gray-3: var(--color-text-muted);
+    --sl-color-gray-4: color-mix(in oklab, var(--color-text-muted) 70%, var(--color-bg));
+    --sl-color-gray-5: var(--color-border);
+    --sl-color-gray-6: color-mix(in oklab, var(--color-border) 55%, var(--color-bg));
+    --sl-color-gray-7: var(--color-surface);
+    --sl-color-black: var(--color-bg);
+
+    --sl-color-accent-low: color-mix(in oklab, var(--color-primary) 22%, var(--color-bg));
+    --sl-color-accent: var(--color-primary);
+    --sl-color-accent-high: color-mix(in oklab, var(--color-primary) 70%, var(--color-text));
+
+    --sl-color-text: var(--color-text);
+    --sl-color-text-accent: var(--color-primary);
+    --sl-color-text-invert: var(--color-bg);
+
+    --sl-color-bg: var(--color-bg);
+    --sl-color-bg-nav: var(--color-surface);
+    --sl-color-bg-sidebar: var(--color-surface);
+    --sl-color-bg-inline-code: color-mix(in oklab, var(--color-bg) 55%, var(--color-border));
+    --sl-color-bg-accent: var(--color-primary);
+
+    --sl-color-hairline: var(--color-border);
+    --sl-color-hairline-light: var(--color-border);
+    --sl-color-hairline-shade: var(--color-border);
+
+    --sl-color-backdrop-overlay: color-mix(in srgb, var(--color-bg) 66%, transparent);
+  }
+}
+
+@layer components {
+  /*
+   * `accent` is the one Token that does not change with the theme, and the one
+   * that can never carry text on the light background: ocellus gold measures
+   * 1.76 against paper. So on paper it fills, with night over it — 8.52 — and
+   * on night it is free to speak as a foreground, at the same 8.52 read the
+   * other way round. Both readings are asserted by the build.
+   *
+   * A selection is the fill: two rules, because the Token that *is* night
+   * differs by theme — light reaches for `text`, dark reaches for `bg`. That
+   * asymmetry belongs to the Palette, not to the design system.
+   */
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  :root[data-theme='light'] ::selection {
+    color: var(--color-text);
+  }
+
+  /*
+   * A rule is the other half: a gold band across paper, a gold line on night.
+   * Starlight draws it in the hairline grey, which on either ground says
+   * nothing about whose site this is.
+   */
+  hr {
+    border-color: var(--color-accent);
+    border-top-width: 2px;
+  }
+
+}
