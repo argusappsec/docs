@@ -13,9 +13,11 @@
  *
  * Two things carry the design. The mark is an ocellus, the eye in a peacock's
  * feather, which is where the myth put the hundred eyes of Argus: so the hero
- * sits inside faint concentric rings that dilate like an iris. And the review
- * card is the product's most characteristic moment — a finding you can answer
- * back. Everything else is quiet on purpose.
+ * sits inside faint concentric rings that dilate like an iris, and a ring leaves
+ * the centre every few seconds the way an eye sweeps a room. And the page argues
+ * by showing rather than telling: one conversation, replaying, in which Argus
+ * turns a missing check into a real exploit path using something only this
+ * organization knows. Everything else is quiet on purpose.
  *
  * The copy is short by instruction. Where a sentence could be two, it is one.
  *
@@ -26,6 +28,7 @@
 import { getCollection } from 'astro:content';
 
 import Mark from '../assets/brand/argus.svg';
+import GitHubMark from '../components/GitHubMark.astro';
 import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
 import '../styles/global.css';
 
@@ -39,31 +42,30 @@ const guideHref = overview?.href ?? GUIDE_ROOT;
 const REPOSITORY = 'https://github.com/argusappsec/argus';
 const SECURITY_CONTACT = 'security@argusappsec.com';
 
-const TITLE = 'Argus — an application security agent you can argue with';
+const TITLE = 'Argus — an application security agent that knows your organization';
 const DESCRIPTION =
-  'Argus is an open-source application security agent. It reviews your code, ' +
-  'tells you what matters, and defends its findings when you disagree.';
+  'Argus is an open-source application security agent. It reviews your code ' +
+  'against your own stack, risk tolerance and exceptions, and answers when you disagree.';
 
 /**
- * The review, as an illustration. Every part of it is behaviour the Guide
- * documents: a review arrives on a pull request, and the way to talk to Argus is
- * its bare name opening the comment, which is why the reply reads exactly like
- * this. Generic on purpose — no repository, no org, nothing that could be read
- * as a record of a real review.
+ * The hero's thesis, as a conversation: the finding a scanner cannot reach,
+ * because reaching it takes something only this organization knows.
+ *
+ * Written inside what the Guide documents and no further. SOUL and MEMORY ride
+ * along in every model call, which is what lets Argus turn "support agents share
+ * one account" into an exploit path, and filing findings is what the agent loop
+ * does. Generic on purpose: no repository, no organization, nothing readable as
+ * a record of a real review.
  */
-const REVIEW = {
-  where: 'pull request',
-  /** Separate from its label, and a number rather than part of the string: a
-   *  hash followed by three digits is also a valid hex colour, and the Palette's
-   *  budget in `tokens.test.ts` counts every one of those in the repository. */
-  number: 128,
-  severity: 'high',
-  endpoint: 'GET /orders/{id}',
-  finding: 'Broken object authorization',
-  detail: 'The handler loads the order by id. Nothing checks who owns it.',
-  question: 'Argus, is this finding real?',
-  answer: 'Yes. The query filters by id only, so any signed-in user can read any order.',
-};
+const CONVERSATION = [
+  { who: 'you', says: 'anything worth my time in payments?' },
+  {
+    who: 'argus',
+    says: 'Yes. Orders load by id with no ownership check. You told me support agents share one service account, so any agent can read any customer’s order.',
+  },
+  { who: 'you', says: 'that is worse than the scanner said.' },
+  { who: 'argus', says: 'The scanner cannot know who your agents are. I filed it high.' },
+];
 
 /**
  * What a review does, in the order it does it. A sequence, so it is numbered;
@@ -88,27 +90,37 @@ const STEPS = [
   },
 ];
 
-/** The Argument. Three ingredients; the third is the one nobody ships. */
-const INGREDIENTS = [
+/**
+ * What Argus is worth, in the order it is worth it. The Argument still gets
+ * made, in one line, as the heading above these: scanners go blind, models get
+ * noisy, and the organization decides. These three are what that buys.
+ *
+ * The third stays deliberately short of naming channels. Which places Argus can
+ * be reached from is an Inventory, and it changes; that a colleague answers
+ * questions does not.
+ */
+const STRENGTHS = [
   {
-    role: 'The scanners',
-    title: 'Precise, and blind here',
-    detail: 'A missing ownership check has no signature. Nothing in the code looks wrong.',
+    label: 'Your model',
+    title: 'Bring your own AI.',
+    detail: 'A hosted API, or a model on hardware you own.',
+    claim: 'Run it locally and your code never leaves your infrastructure.',
   },
   {
-    role: 'The model',
-    title: 'Sharp, and noisy',
-    detail: 'Alone with a repository it returns pages of maybes. Nobody triages that.',
+    label: 'Your context',
+    title: 'It learns from you.',
+    detail: 'Your stack, your risk tolerance, the exceptions you granted.',
+    claim: 'What you teach it rides along in every review.',
   },
   {
-    role: 'Your organization',
-    title: 'The part that decides',
-    detail: 'What counts as risk here depends on what you build and what you already accepted.',
-    missing: true,
+    label: 'Your colleague',
+    title: 'Discuss it, do not read it.',
+    detail: 'A report is a list. This one answers.',
+    claim: 'Ask why, disagree, and get a straight answer from something that knows your domain.',
   },
 ];
 
-/** ADR 0004 keeps gold out of small type, so the numbers are `primary` on `bg`. */
+/** ADR 0004 keeps gold out of small type, so the figures are `primary` on `bg`. */
 const SCORE = [
   { figure: '100%', label: 'recall' },
   { figure: '100%', label: 'precision' },
@@ -166,13 +178,16 @@ const canonical = new URL('/', Astro.site);
 
         <nav class="nav" aria-label="Sections of this page">
           <a href="#how">How it works</a>
-          <a href="#case">The case</a>
+          <a href="#why">Why Argus</a>
           <a href="#verified">Verified</a>
         </nav>
 
         <div class="topbar-end">
-          <a class="nav-link" href={guideHref}>Guide</a>
-          <a class="button button-primary button-sm" href={REPOSITORY}>GitHub</a>
+          <a class="nav-link" href={guideHref}>Docs</a>
+          <a class="button button-primary button-sm button-icon" href={REPOSITORY}>
+            <GitHubMark size={15} />
+            GitHub
+          </a>
         </div>
       </div>
     </header>
@@ -180,6 +195,11 @@ const canonical = new URL('/', Astro.site);
     <main id="main">
       <section class="section hero">
         <span class="rings" aria-hidden="true"></span>
+        <span class="sweep sweep-1" aria-hidden="true"></span>
+        <span class="sweep sweep-2" aria-hidden="true"></span>
+        <span class="blip blip-1" aria-hidden="true"></span>
+        <span class="blip blip-2" aria-hidden="true"></span>
+        <span class="blip blip-3" aria-hidden="true"></span>
 
         <div class="shell hero-inner">
           <p class="badge">
@@ -188,43 +208,49 @@ const canonical = new URL('/', Astro.site);
           </p>
 
           <h1 class="hero-title">
-            A security review <span class="accented">you can argue with.</span>
+            Argus reviews your code. <span class="accented">And learns from you.</span>
           </h1>
 
           <p class="lede">
-            An open-source application security agent. It reviews your code, tells you what matters,
-            and defends its findings when you disagree.
+            An open-source application security agent that knows your stack, your risk tolerance and
+            the exceptions you already granted.
           </p>
 
           <p class="actions">
-            <a class="button button-primary" href={guideHref}>Read the Guide</a>
-            <a class="button" href={REPOSITORY}>Argus on GitHub</a>
+            <a class="button button-primary" href={guideHref}>Read the docs</a>
+            <a class="button button-icon" href={REPOSITORY}>
+              <GitHubMark />
+              Argus on GitHub
+            </a>
           </p>
 
-          <figure class="review">
-            <figcaption class="sr-only">
-              An example of a review Argus leaves on a pull request, and its answer when the finding
-              is questioned.
-            </figcaption>
-
-            <div class="review-head">
-              <span class="review-where">
-                <Mark class="mark mark-sm" width="15" />
-                {REVIEW.where} #{REVIEW.number}
-              </span>
-              <span class="chip chip-sm">{REVIEW.severity}</span>
-            </div>
-
-            <p class="review-title">
-              {REVIEW.finding} in <code>{REVIEW.endpoint}</code>
-            </p>
-            <p class="review-detail">{REVIEW.detail}</p>
-
-            <div class="thread">
-              <p class="turn"><span class="who">you</span>{REVIEW.question}</p>
-              <p class="turn"><span class="who who-argus">argus</span>{REVIEW.answer}</p>
-            </div>
-          </figure>
+          {
+            /* No caption: the messages are real text in reading order, so a
+               screen reader gets the conversation itself rather than a summary
+               of it. */
+          }
+          <div class="chat">
+            <ol class="chat-log">
+              {
+                CONVERSATION.map(({ who, says }, index) => (
+                  <li
+                    class:list={[
+                      'bubble',
+                      `bubble-${index + 1}`,
+                      who === 'you' ? 'from-you' : 'from-argus',
+                    ]}
+                  >
+                    {who !== 'you' && (
+                      <span class="bubble-mark" aria-hidden="true">
+                        <Mark width="16" />
+                      </span>
+                    )}
+                    <span class="bubble-text">{says}</span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
         </div>
       </section>
 
@@ -244,30 +270,32 @@ const canonical = new URL('/', Astro.site);
               ))
             }
           </ol>
+
+          <p class="prose reveal step-link">
+            <a href="/guide/channels/github/">How reviews on GitHub work</a>
+          </p>
         </div>
       </section>
 
-      <section class="section section-raised" id="case" aria-labelledby="case-heading">
+      <section class="section section-raised" id="why" aria-labelledby="why-heading">
         <div class="shell">
-          <p class="eyebrow reveal">The case</p>
-          <h2 class="heading reveal" id="case-heading">
+          <p class="eyebrow reveal">Why Argus</p>
+          <h2 class="heading reveal" id="why-heading">
             Scanners go blind. Models get noisy. Your context decides.
           </h2>
 
-          <ul class="ingredients">
+          <ul class="strengths">
             {
-              INGREDIENTS.map((ingredient) => (
-                <li class:list={['card', 'ingredient', { 'ingredient-missing': ingredient.missing }]}>
-                  <p class="role">{ingredient.role}</p>
-                  <h3 class="card-title">{ingredient.title}</h3>
-                  <p class="card-body">{ingredient.detail}</p>
+              STRENGTHS.map(({ label, title, detail, claim }) => (
+                <li class="card strength">
+                  <p class="role">{label}</p>
+                  <h3 class="card-title">{title}</h3>
+                  <p class="card-body">{detail}</p>
+                  <p class="strength-claim">{claim}</p>
                 </li>
               ))
             }
           </ul>
-
-          <hr class="rule reveal" />
-          <p class="closing reveal">Take one away and you get a tool people learn to ignore.</p>
         </div>
       </section>
 
@@ -287,36 +315,18 @@ const canonical = new URL('/', Astro.site);
             }
           </ul>
 
-          <div class="prose reveal">
-            <p>
-              Argus runs an authorization audit against VAmPI, a deliberately vulnerable API. It
-              found every broken-authorization flaw in it and reported nothing that was not there.
-            </p>
-            <p><a href="/guide/skills/">How skills work</a></p>
-          </div>
+          <p class="prose reveal">
+            Measured on VAmPI, a deliberately vulnerable API. Argus found every
+            broken-authorization flaw in it and reported nothing that was not there.
+          </p>
         </div>
       </section>
 
-      <section class="section" id="model" aria-labelledby="model-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Your model</p>
-          <h2 class="heading reveal" id="model-heading">Bring your own model.</h2>
 
-          <div class="prose reveal">
-            <p>
-              A provider type names a protocol, not a vendor. Any server that speaks it is a
-              candidate, hosted or running on hardware you own.
-            </p>
-            <p class="claim">Run the model locally and your code never leaves your infrastructure.</p>
-            <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section section-raised" id="guide" aria-labelledby="guide-heading">
+      <section class="section section-raised" id="docs" aria-labelledby="docs-heading">
         <div class="shell">
-          <p class="eyebrow reveal">The Guide</p>
-          <h2 class="heading reveal" id="guide-heading">Everything you have to run.</h2>
+          <p class="eyebrow reveal">Docs</p>
+          <h2 class="heading reveal" id="docs-heading">Everything you have to run.</h2>
 
           <ul class="guide-pages">
             {
@@ -341,7 +351,7 @@ const canonical = new URL('/', Astro.site);
           The Guide is written in the Argus repository and published here.
         </p>
         <p class="footer-links">
-          <a href={guideHref}>Guide</a>
+          <a href={guideHref}>Docs</a>
           <a href={REPOSITORY}>GitHub</a>
           <a href={`mailto:${SECURITY_CONTACT}`}>Report a vulnerability</a>
         </p>
@@ -369,6 +379,9 @@ const canonical = new URL('/', Astro.site);
         font-size: 1.0625rem;
         line-height: 1.6;
         -webkit-font-smoothing: antialiased;
+        /* One easing for everything that arrives, so the page moves in one
+           handwriting. */
+        --enter: cubic-bezier(0.22, 0.68, 0.3, 1);
       }
 
       h1,
@@ -460,9 +473,7 @@ const canonical = new URL('/', Astro.site);
       .badge,
       .role,
       .step-number,
-      .tile-label,
-      .review-where,
-      .thread {
+      .tile-label {
         font-family: var(--font-mono);
       }
 
@@ -532,11 +543,13 @@ const canonical = new URL('/', Astro.site);
         border-bottom: 1px solid var(--color-border);
       }
 
+      /* The mark holds the left; everything you can click gathers on the right.
+         `auto` before the section links is what pushes the whole group over, and
+         it keeps working when the links drop away on a narrow screen. */
       .topbar-inner {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
+        gap: 1.75rem;
         min-height: 3.5rem;
       }
 
@@ -558,6 +571,7 @@ const canonical = new URL('/', Astro.site);
       .nav {
         display: none;
         gap: 1.5rem;
+        margin-left: auto;
         font-size: 0.8125rem;
       }
 
@@ -581,11 +595,16 @@ const canonical = new URL('/', Astro.site);
         display: flex;
         align-items: center;
         gap: 1rem;
+        margin-left: auto;
       }
 
       @media (min-width: 52rem) {
         .nav {
           display: flex;
+        }
+
+        .topbar-end {
+          margin-left: 0;
         }
       }
 
@@ -616,6 +635,60 @@ const canonical = new URL('/', Astro.site);
         );
         mask-image: radial-gradient(circle at 50% 30%, black 8%, transparent 62%);
         transform-origin: 50% 30%;
+      }
+
+      /*
+       * The eye looking: a ring that leaves the centre and fades out, twice a
+       * cycle, offset so one is always on its way. Invisible at rest, which is
+       * what makes it safe to switch off — a reader who asks for less motion
+       * loses a decoration rather than gaining a stray circle.
+       */
+      .sweep {
+        position: absolute;
+        left: 50%;
+        top: 30%;
+        width: 13rem;
+        height: 13rem;
+        margin: -6.5rem 0 0 -6.5rem;
+        border: 1px solid color-mix(in srgb, var(--color-accent) 42%, transparent);
+        border-radius: 50%;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /*
+       * What the sweep finds. A sonar that never returns anything is a
+       * decoration; these light up as the ring reaches them, which is the whole
+       * argument of the page in the smallest form it has: something is looking,
+       * and it is finding things.
+       *
+       * Ahead of `.hero-inner` in the document and unpositioned in the stack, so
+       * they can never land on top of the words.
+       */
+      .blip {
+        position: absolute;
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 50%;
+        background-color: var(--color-accent);
+        box-shadow: 0 0 0 0.3rem color-mix(in srgb, var(--color-accent) 16%, transparent);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .blip-1 {
+        left: 18%;
+        top: 27%;
+      }
+
+      .blip-2 {
+        left: 82%;
+        top: 18%;
+      }
+
+      .blip-3 {
+        left: 77%;
+        top: 46%;
       }
 
       .hero-inner {
@@ -718,89 +791,85 @@ const canonical = new URL('/', Astro.site);
         font-size: 0.8125rem;
       }
 
-      /* The review ----------------------------------------------------------
-       *
-       * The signature of the page, and the only place it raises its voice: the
-       * thing Argus does that a report cannot. Nothing here is `primary`,
-       * because verdigris on the dark `surface` measures 4.31 and would fail AA
-       * for body text; the severity chip carries the colour instead.
-       */
-
-      .review {
-        width: 100%;
-        max-width: 34rem;
-        margin-top: 1rem;
-        padding: 1.15rem 1.25rem 1.25rem;
-        background-color: var(--color-surface);
-        border: 1px solid var(--color-border);
-        border-radius: 0.9rem;
-        text-align: left;
-        box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--color-bg) 55%, transparent);
-      }
-
-      .review-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-        font-size: 0.75rem;
-        color: var(--color-text-muted);
-      }
-
-      .review-where {
+      .button-icon {
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
       }
 
-      .mark-sm {
-        opacity: 0.85;
+      /* The conversation ----------------------------------------------------
+       *
+       * The hero's signature: the thing a scanner cannot do is know why a
+       * finding matters here. Set as a chat, because that is the claim.
+       *
+       * Your side is a `primary` fill with `bg` over it, which is a pair the
+       * build asserts. Argus answers on `bg` inside the `surface` card, so its
+       * side never needs a colour that would fail there.
+       */
+
+      .chat {
+        width: 100%;
+        max-width: 38rem;
+        margin-top: 1.25rem;
+        padding: 1.25rem;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 1rem;
+        text-align: left;
+        box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--color-bg) 55%, transparent);
       }
 
-      .review-title {
-        margin-top: 0.85rem;
-        font-size: 1.0625rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-      }
-
-      .review-detail {
-        margin-top: 0.35rem;
-        font-size: 0.9375rem;
-        color: var(--color-text-muted);
-      }
-
-      .thread {
-        margin-top: 1rem;
-        padding-top: 0.9rem;
-        border-top: 1px solid var(--color-border);
+      .chat-log {
         display: grid;
         gap: 0.6rem;
-        font-size: 0.8125rem;
+        font-size: 0.9375rem;
         line-height: 1.5;
       }
 
-      /* Wide enough for the longer of the two speakers plus its chevron, which is
-         `argus ›`. A wrapped speaker label stops reading as a transcript. */
-      .turn {
-        display: grid;
-        grid-template-columns: 4.5rem 1fr;
-        gap: 0.5rem;
+      .bubble {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.45rem;
+        max-width: 88%;
       }
 
-      .who {
-        color: var(--color-text-muted);
-        white-space: nowrap;
+      .bubble-text {
+        padding: 0.5rem 0.75rem;
+        border-radius: 1rem;
       }
 
-      .who::after {
-        content: ' ›';
+      .from-you {
+        justify-self: end;
+        flex-direction: row-reverse;
       }
 
-      .who-argus {
-        color: var(--color-text);
-        font-weight: 600;
+      .from-you .bubble-text {
+        background-color: var(--color-primary);
+        border-bottom-right-radius: 0.3rem;
+        color: var(--color-bg);
       }
+
+      .from-argus .bubble-text {
+        background-color: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-bottom-left-radius: 0.3rem;
+      }
+
+      /* The mark sits where a chat puts an avatar, at the size the brand's own
+         README gives as its floor for the mark alone. */
+      .bubble-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 1.7rem;
+        height: 1.7rem;
+        margin-bottom: 0.1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 50%;
+        background-color: var(--color-bg);
+      }
+
 
       /* How it works --------------------------------------------------------
        *
@@ -845,6 +914,10 @@ const canonical = new URL('/', Astro.site);
         color: var(--color-text-muted);
       }
 
+      .step-link {
+        margin-top: 2.25rem;
+      }
+
       /* Cards ---------------------------------------------------------------
        *
        * On the raised band the cards are `bg`: the same two Tokens as
@@ -882,15 +955,36 @@ const canonical = new URL('/', Astro.site);
         color: var(--color-text-muted);
       }
 
-      .ingredients {
+      .strengths {
         display: grid;
         gap: 1rem;
       }
 
       @media (min-width: 52rem) {
-        .ingredients {
+        .strengths {
           grid-template-columns: repeat(3, 1fr);
         }
+      }
+
+      .strength {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .strength .card-body {
+        padding-bottom: 0.9rem;
+      }
+
+      /* The line each card is really about, so it is the line that is not muted.
+         Gold as a rule again, never as type: on paper it cannot carry text.
+         `auto` above it lands the three rules on one line whatever the cards
+         above them do. */
+      .strength-claim {
+        margin-top: auto;
+        padding-top: 0.85rem;
+        border-top: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+        font-size: 0.9375rem;
+        font-weight: 600;
       }
 
       .role {
@@ -910,42 +1004,9 @@ const canonical = new URL('/', Astro.site);
         width: 0.4rem;
         height: 0.4rem;
         border-radius: 50%;
-        background-color: var(--color-text-muted);
-      }
-
-      /* The third ingredient is the one nobody ships, so it is the one in gold. */
-      .ingredient-missing .role {
-        color: var(--color-text);
-      }
-
-      .ingredient-missing .role::before {
         background-color: var(--color-accent);
-        box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--color-accent) 28%, transparent);
       }
 
-      /*
-       * The Token layer already makes an `hr` a gold band, but it only sets the
-       * colour and the top width — it is written for Starlight's routes, where
-       * Starlight's reset has already cleared the browser's inset border. This
-       * page has no such reset, so the border has to be cleared here, and
-       * clearing it unlayered takes the Token layer's colour with it. Hence both
-       * again: same decision, restated where nothing else survives.
-       */
-      .rule {
-        width: 3.5rem;
-        margin: 2.25rem 0 1.1rem;
-        border: 0;
-        border-top: 2px solid var(--color-accent);
-        transform-origin: left center;
-      }
-
-      .closing {
-        max-width: 32rem;
-        font-size: clamp(1.0625rem, 2vw, 1.2rem);
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        text-wrap: balance;
-      }
 
       /* The score -----------------------------------------------------------
        *
@@ -1109,10 +1170,65 @@ const canonical = new URL('/', Astro.site);
 
         /* The card lands last and from further away: it is the one thing on the
            page worth waiting a third of a second for. */
-        .review {
-          animation:
-            settle 0.9s 0.38s cubic-bezier(0.22, 0.68, 0.3, 1) both,
-            rise 0s both;
+        .chat {
+          animation: settle 0.9s 0.38s cubic-bezier(0.22, 0.68, 0.3, 1) both;
+        }
+
+        /*
+         * The conversation replays: each message arrives in turn, the four hold
+         * long enough to be read twice, then the log clears and it starts again.
+         *
+         * Four sets of keyframes rather than one set and four delays, which is
+         * the shorter way to write it and the wrong one: with delays, every
+         * bubble also *clears* on its own offset, so the log empties raggedly
+         * instead of at once. Same duration and no delay anywhere means all four
+         * share one clock, and the percentages say when each speaks.
+         */
+        .bubble {
+          animation: 15s var(--enter) infinite both;
+        }
+
+        .bubble-1 {
+          animation-name: says-1;
+        }
+
+        .bubble-2 {
+          animation-name: says-2;
+        }
+
+        .bubble-3 {
+          animation-name: says-3;
+        }
+
+        .bubble-4 {
+          animation-name: says-4;
+        }
+
+        .blip-1 {
+          animation: blip 7s 3.6s ease-out infinite;
+        }
+
+        .blip-2 {
+          animation: blip 7s 5.4s ease-out infinite;
+        }
+
+        .blip-3 {
+          animation: blip 7s 4.4s ease-out infinite;
+        }
+
+        /* The eye looking, twice a cycle, the second one halfway behind. */
+        .sweep-1 {
+          animation: sweep 7s 2.4s ease-out infinite;
+        }
+
+        .sweep-2 {
+          animation: sweep 7s 5.9s ease-out infinite;
+        }
+
+        /* Two beats and a rest, at rest-heart-rate. The one gold dot on the page
+           is also the only thing on it that is alive. */
+        .badge-dot {
+          animation: beat 2.6s ease-in-out infinite;
         }
 
         /* The iris: out once on arrival, then a slow dilation that never
@@ -1157,10 +1273,6 @@ const canonical = new URL('/', Astro.site);
             animation-timeline: view();
             animation-range: entry 6% entry 55%;
           }
-
-          .rule {
-            animation-name: draw;
-          }
         }
       }
 
@@ -1195,9 +1307,127 @@ const canonical = new URL('/', Astro.site);
         }
       }
 
-      @keyframes draw {
+
+      /*
+       * One message arriving, at four moments in the same fifteen seconds. The
+       * `to` of each is where the bubble rests, so the page with no motion is the
+       * page with all four messages in place.
+       */
+      @keyframes says-1 {
+        0%,
+        2% {
+          opacity: 0;
+          transform: translateY(0.5rem);
+        }
+        6%,
+        90% {
+          opacity: 1;
+          transform: none;
+        }
+        95%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes says-2 {
+        0%,
+        18% {
+          opacity: 0;
+          transform: translateY(0.5rem);
+        }
+        23%,
+        90% {
+          opacity: 1;
+          transform: none;
+        }
+        95%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes says-3 {
+        0%,
+        46% {
+          opacity: 0;
+          transform: translateY(0.5rem);
+        }
+        50%,
+        90% {
+          opacity: 1;
+          transform: none;
+        }
+        95%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes says-4 {
+        0%,
+        62% {
+          opacity: 0;
+          transform: translateY(0.5rem);
+        }
+        67%,
+        90% {
+          opacity: 1;
+          transform: none;
+        }
+        95%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes sweep {
         from {
-          transform: scaleX(0);
+          opacity: 0;
+          transform: scale(0.4);
+        }
+        12% {
+          opacity: 0.9;
+        }
+        to {
+          opacity: 0;
+          transform: scale(2.7);
+        }
+      }
+
+      @keyframes blip {
+        0%,
+        100% {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+        5% {
+          opacity: 1;
+          transform: scale(1.3);
+        }
+        13% {
+          opacity: 0.8;
+          transform: scale(1);
+        }
+        32% {
+          opacity: 0;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes beat {
+        0%,
+        26%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+        }
+        8% {
+          transform: scale(1.55);
+          box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--color-accent) 0%, transparent);
+        }
+        17% {
+          transform: scale(1.28);
         }
       }
     </style>
