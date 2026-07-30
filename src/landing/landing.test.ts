@@ -83,6 +83,11 @@ describe('the Landing', () => {
       /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|lab|lch|hwb|color)\(|\b(?:white|black|gray|grey|silver|red|orange|yellow|green|blue|purple|teal|navy|gold)\b/i;
 
     for (const [property, value] of declarations()) {
+      // A mask reads only the alpha channel, so `black` in a mask stop means
+      // "opaque here" and paints nothing. Dressing it as a Token would make the
+      // rule pass without making the mask any more honest.
+      if (property.endsWith('mask') || property.startsWith('mask-')) continue;
+
       expect(value, `${property}: ${value}`).not.toMatch(literal);
     }
   });

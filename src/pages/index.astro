@@ -11,14 +11,21 @@
  * pages is read from the Mirror's frontmatter — see `src/landing/handoff.ts` for
  * why frontmatter and never prose.
  *
+ * Two things carry the design. The mark is an ocellus, the eye in a peacock's
+ * feather, which is where the myth put the hundred eyes of Argus: so the hero
+ * sits inside faint concentric rings that dilate like an iris. And the review
+ * card is the product's most characteristic moment — a finding you can answer
+ * back. Everything else is quiet on purpose.
+ *
+ * The copy is short by instruction. Where a sentence could be two, it is one.
+ *
  * This is a plain Astro page, outside Starlight's layout, which is why it
  * carries its own document head, its own theme resolution (ADR 0007) and its own
  * reset. All of its colour comes from the Tokens; none of it is a literal.
  */
 import { getCollection } from 'astro:content';
 
-import BannerDark from '../assets/brand/argus-banner-dark.svg';
-import BannerLight from '../assets/brand/argus-banner-light.svg';
+import Mark from '../assets/brand/argus.svg';
 import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
 import '../styles/global.css';
 
@@ -34,8 +41,79 @@ const SECURITY_CONTACT = 'security@argusappsec.com';
 
 const TITLE = 'Argus — an application security agent you can argue with';
 const DESCRIPTION =
-  'Argus is an open-source application security agent: it drives real scanners, ' +
-  'judges what they find by how your own team builds and ships, and answers back when you disagree.';
+  'Argus is an open-source application security agent. It reviews your code, ' +
+  'tells you what matters, and defends its findings when you disagree.';
+
+/**
+ * The review, as an illustration. Every part of it is behaviour the Guide
+ * documents: a review arrives on a pull request, and the way to talk to Argus is
+ * its bare name opening the comment, which is why the reply reads exactly like
+ * this. Generic on purpose — no repository, no org, nothing that could be read
+ * as a record of a real review.
+ */
+const REVIEW = {
+  where: 'pull request',
+  /** Separate from its label, and a number rather than part of the string: a
+   *  hash followed by three digits is also a valid hex colour, and the Palette's
+   *  budget in `tokens.test.ts` counts every one of those in the repository. */
+  number: 128,
+  severity: 'high',
+  endpoint: 'GET /orders/{id}',
+  finding: 'Broken object authorization',
+  detail: 'The handler loads the order by id. Nothing checks who owns it.',
+  question: 'Argus, is this finding real?',
+  answer: 'Yes. The query filters by id only, so any signed-in user can read any order.',
+};
+
+/**
+ * What a review does, in the order it does it. A sequence, so it is numbered;
+ * the three parts of the Argument below are not a sequence, and are not.
+ */
+const STEPS = [
+  {
+    title: 'Runs the scanners',
+    detail: 'Real scanners, wrapped as structured tools. The model never gets a shell.',
+  },
+  {
+    title: 'Reads the findings',
+    detail: 'It works through them instead of forwarding a report nobody opens.',
+  },
+  {
+    title: 'Weighs your context',
+    detail: 'Your stack, your risk tolerance, the exceptions you already granted.',
+  },
+  {
+    title: 'Answers back',
+    detail: 'Ask why on the thread. The answer arrives where the review did.',
+  },
+];
+
+/** The Argument. Three ingredients; the third is the one nobody ships. */
+const INGREDIENTS = [
+  {
+    role: 'The scanners',
+    title: 'Precise, and blind here',
+    detail: 'A missing ownership check has no signature. Nothing in the code looks wrong.',
+  },
+  {
+    role: 'The model',
+    title: 'Sharp, and noisy',
+    detail: 'Alone with a repository it returns pages of maybes. Nobody triages that.',
+  },
+  {
+    role: 'Your organization',
+    title: 'The part that decides',
+    detail: 'What counts as risk here depends on what you build and what you already accepted.',
+    missing: true,
+  },
+];
+
+/** ADR 0004 keeps gold out of small type, so the numbers are `primary` on `bg`. */
+const SCORE = [
+  { figure: '100%', label: 'recall' },
+  { figure: '100%', label: 'precision' },
+  { figure: 'VAmPI', label: 'benchmark' },
+];
 
 const canonical = new URL('/', Astro.site);
 ---
@@ -77,146 +155,168 @@ const canonical = new URL('/', Astro.site);
   </head>
 
   <body>
-    <main>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="topbar">
+      <div class="shell topbar-inner">
+        <a class="brand" href="/">
+          <Mark class="mark" width="24" />
+          <span>Argus</span>
+        </a>
+
+        <nav class="nav" aria-label="Sections of this page">
+          <a href="#how">How it works</a>
+          <a href="#case">The case</a>
+          <a href="#verified">Verified</a>
+        </nav>
+
+        <div class="topbar-end">
+          <a class="nav-link" href={guideHref}>Guide</a>
+          <a class="button button-primary button-sm" href={REPOSITORY}>GitHub</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
       <section class="section hero">
+        <span class="rings" aria-hidden="true"></span>
+
         <div class="shell hero-inner">
-          <p class="logotype">
-            <span class="halo" aria-hidden="true"></span>
-            <span class="banner banner-light"><BannerLight width="100%" /></span>
-            <span class="banner banner-dark"><BannerDark width="100%" /></span>
+          <p class="badge">
+            <span class="badge-dot" aria-hidden="true"></span>
+            Open source · Self-hosted · Apache 2.0
           </p>
 
-          <h1 class="hero-title">A security review you can argue with.</h1>
+          <h1 class="hero-title">
+            A security review <span class="accented">you can argue with.</span>
+          </h1>
 
-          <p class="hero-lede">
-            Argus is an open-source application security agent. It drives real scanners, weighs what
-            they find against how your organization actually builds software, and reports in plain
-            language what deserves attention. Then you push back — and it answers.
+          <p class="lede">
+            An open-source application security agent. It reviews your code, tells you what matters,
+            and defends its findings when you disagree.
           </p>
 
-          <p class="hero-actions">
+          <p class="actions">
             <a class="button button-primary" href={guideHref}>Read the Guide</a>
             <a class="button" href={REPOSITORY}>Argus on GitHub</a>
           </p>
 
-          <p class="hero-note">
-            Or skip the reading: <a href="/guide/getting-started/">install it and run the first
-            review</a>.
-          </p>
+          <figure class="review">
+            <figcaption class="sr-only">
+              An example of a review Argus leaves on a pull request, and its answer when the finding
+              is questioned.
+            </figcaption>
+
+            <div class="review-head">
+              <span class="review-where">
+                <Mark class="mark mark-sm" width="15" />
+                {REVIEW.where} #{REVIEW.number}
+              </span>
+              <span class="chip chip-sm">{REVIEW.severity}</span>
+            </div>
+
+            <p class="review-title">
+              {REVIEW.finding} in <code>{REVIEW.endpoint}</code>
+            </p>
+            <p class="review-detail">{REVIEW.detail}</p>
+
+            <div class="thread">
+              <p class="turn"><span class="who">you</span>{REVIEW.question}</p>
+              <p class="turn"><span class="who who-argus">argus</span>{REVIEW.answer}</p>
+            </div>
+          </figure>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="the-case">
+      <section class="section" id="how" aria-labelledby="how-heading">
+        <div class="shell">
+          <p class="eyebrow reveal">How it works</p>
+          <h2 class="heading reveal" id="how-heading">A review, then a conversation.</h2>
+
+          <ol class="steps">
+            {
+              STEPS.map((step, index) => (
+                <li class="step reveal">
+                  <span class="step-number">{String(index + 1).padStart(2, '0')}</span>
+                  <h3 class="step-title">{step.title}</h3>
+                  <p class="step-body">{step.detail}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </section>
+
+      <section class="section section-raised" id="case" aria-labelledby="case-heading">
         <div class="shell">
           <p class="eyebrow reveal">The case</p>
-          <h2 class="heading reveal" id="the-case">
-            Precision, reasoning, and the part that decides what matters.
+          <h2 class="heading reveal" id="case-heading">
+            Scanners go blind. Models get noisy. Your context decides.
           </h2>
 
           <ul class="ingredients">
-            <li class="card ingredient reveal">
-              <p class="role">The scanners</p>
-              <h3 class="card-title">Precise about anything with a signature.</h3>
-              <p class="card-body">
-                A rule engine finds what somebody has already described. A missing ownership check
-                is not a syntax error and matches no pattern: nothing in the code looks wrong, only
-                the assumption about who was allowed to ask. No number of rules turns that into a
-                match.
-              </p>
-            </li>
-
-            <li class="card ingredient reveal">
-              <p class="role">The model</p>
-              <h3 class="card-title">Able to reason, easy to flood.</h3>
-              <p class="card-body">
-                A language model can read a function and follow what it implies. Left alone with a
-                repository it also produces more maybes than anyone will work through, and a list
-                nobody triages says about as much as no list at all.
-              </p>
-            </li>
-
-            <li class="card ingredient ingredient-missing reveal">
-              <p class="role">Your organization</p>
-              <h3 class="card-title">The context that settles it.</h3>
-              <p class="card-body">
-                Whether a finding matters here depends on what you build, which risks you already
-                accepted, and what your team decided last quarter. Argus carries that into every
-                review: scanners run as structured tools, the model works through curated
-                methodology, and the judgement is made against your stack and your tolerance instead
-                of a generic severity table.
-              </p>
-            </li>
+            {
+              INGREDIENTS.map((ingredient) => (
+                <li class:list={['card', 'ingredient', { 'ingredient-missing': ingredient.missing }]}>
+                  <p class="role">{ingredient.role}</p>
+                  <h3 class="card-title">{ingredient.title}</h3>
+                  <p class="card-body">{ingredient.detail}</p>
+                </li>
+              ))
+            }
           </ul>
 
           <hr class="rule reveal" />
-          <p class="closing reveal">
-            Remove any one of the three and what is left is a tool people learn to ignore.
-          </p>
+          <p class="closing reveal">Take one away and you get a tool people learn to ignore.</p>
         </div>
       </section>
 
-      <section class="section" aria-labelledby="measured">
+      <section class="section" id="verified" aria-labelledby="verified-heading">
         <div class="shell">
-          <div class="measured reveal">
-            <p class="eyebrow">Measured</p>
-            <h2 class="heading" id="measured">A claim you can go and check.</h2>
-            <p class="measured-body">
-              Broken authorization is where the first two ingredients do worst: there is no signature
-              for a scanner to match, and nothing is easier for a model to invent. Argus's
-              authorization audit was run against VAmPI, a deliberately vulnerable API used as a
-              benchmark — it found every broken-authorization flaw in it, and reported nothing that
-              was not there.
-            </p>
+          <p class="eyebrow reveal">Verified</p>
+          <h2 class="heading reveal" id="verified-heading">One claim, and you can check it.</h2>
 
-            <p class="score"><span class="chip">100% recall · 100% precision</span></p>
-            <p class="score-note">
-              <code>authz-audit</code> on VAmPI. Argus follows methodology written down as skills, which
-              your team can extend or replace — <a href="/guide/skills/">how skills work</a>.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" aria-labelledby="own-model">
-        <div class="shell">
-          <p class="eyebrow reveal">Bring your own model</p>
-          <h2 class="heading reveal" id="own-model">Argus speaks a protocol, not a vendor.</h2>
+          <ul class="score">
+            {
+              SCORE.map(({ figure, label }) => (
+                <li class="tile reveal">
+                  <p class="tile-figure">{figure}</p>
+                  <p class="tile-label">{label}</p>
+                </li>
+              ))
+            }
+          </ul>
 
           <div class="prose reveal">
             <p>
-              A provider's type names a wire protocol rather than a vendor, and any server that
-              speaks it is a candidate: a hosted API, or a runtime on hardware you own — Ollama and
-              vLLM speak it, and they are examples rather than a list. A candidate is not a promise.
-              Argus implements the protocol and certifies nobody's server, so the honest answer for
-              any one endpoint comes from checking it — and what to check, along with what Argus
-              needs from a model, is written down in the Guide.
+              Argus runs an authorization audit against VAmPI, a deliberately vulnerable API. It
+              found every broken-authorization flaw in it and reported nothing that was not there.
             </p>
-
-            <p class="claim">
-              Point Argus at a model running on your own infrastructure, and your code never leaves
-              it.
-            </p>
-
-            <p>
-              <a href="/guide/llm-providers/">What Argus requires from a model</a>
-            </p>
+            <p><a href="/guide/skills/">How skills work</a></p>
           </div>
         </div>
       </section>
 
-      <section class="section section-raised" aria-labelledby="the-guide">
+      <section class="section" id="model" aria-labelledby="model-heading">
         <div class="shell">
-          <p class="eyebrow reveal">Read the Guide</p>
-          <h2 class="heading reveal" id="the-guide">Everything you have to run, and how to run it.</h2>
+          <p class="eyebrow reveal">Your model</p>
+          <h2 class="heading reveal" id="model-heading">Bring your own model.</h2>
 
           <div class="prose reveal">
-            {overview?.description && <p>{overview.description}</p>}
             <p>
-              Argus runs as one long-lived daemon for the whole organization, reached from the places
-              your team already works. Which places, and how to connect them, is what these pages
-              are for.
+              A provider type names a protocol, not a vendor. Any server that speaks it is a
+              candidate, hosted or running on hardware you own.
             </p>
+            <p class="claim">Run the model locally and your code never leaves your infrastructure.</p>
+            <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
           </div>
+        </div>
+      </section>
+
+      <section class="section section-raised" id="guide" aria-labelledby="guide-heading">
+        <div class="shell">
+          <p class="eyebrow reveal">The Guide</p>
+          <h2 class="heading reveal" id="guide-heading">Everything you have to run.</h2>
 
           <ul class="guide-pages">
             {
@@ -234,14 +334,15 @@ const canonical = new URL('/', Astro.site);
       </section>
     </main>
 
-    <footer class="section footer">
+    <footer class="footer">
       <div class="shell footer-inner">
-        <p>
-          The Guide is authored in the Argus repository, next to the code it describes, and published
-          here.
+        <p class="footer-brand">
+          <Mark class="mark" width="20" />
+          The Guide is written in the Argus repository and published here.
         </p>
         <p class="footer-links">
-          <a href={REPOSITORY}>argusappsec/argus</a>
+          <a href={guideHref}>Guide</a>
+          <a href={REPOSITORY}>GitHub</a>
           <a href={`mailto:${SECURITY_CONTACT}`}>Report a vulnerability</a>
         </p>
       </div>
@@ -266,7 +367,7 @@ const canonical = new URL('/', Astro.site);
         background-color: var(--color-bg);
         color: var(--color-text);
         font-size: 1.0625rem;
-        line-height: 1.65;
+        line-height: 1.6;
         -webkit-font-smoothing: antialiased;
       }
 
@@ -274,11 +375,14 @@ const canonical = new URL('/', Astro.site);
       h2,
       h3,
       p,
-      ul {
+      ul,
+      ol,
+      figure {
         margin: 0;
       }
 
-      ul {
+      ul,
+      ol {
         padding: 0;
         list-style: none;
       }
@@ -287,10 +391,34 @@ const canonical = new URL('/', Astro.site);
         color: inherit;
       }
 
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+      }
+
       :focus-visible {
         outline: 2px solid var(--color-primary);
         outline-offset: 3px;
         border-radius: 2px;
+      }
+
+      .skip {
+        position: absolute;
+        left: 0.75rem;
+        top: 0.75rem;
+        z-index: 2;
+        padding: 0.5rem 0.85rem;
+        border-radius: 0.5rem;
+        background-color: var(--color-primary);
+        color: var(--color-bg);
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-decoration: none;
+        transform: translateY(-250%);
+      }
+
+      .skip:focus-visible {
+        transform: none;
       }
 
       /* Layout ---------------------------------------------------------------
@@ -308,7 +436,9 @@ const canonical = new URL('/', Astro.site);
       }
 
       .section {
-        padding-block: clamp(3.25rem, 7.5vw, 5.5rem);
+        padding-block: clamp(3.25rem, 7vw, 5.25rem);
+        /* The bar is sticky, so an anchor has to stop below it. */
+        scroll-margin-top: 4rem;
       }
 
       .section-raised {
@@ -318,25 +448,43 @@ const canonical = new URL('/', Astro.site);
 
       /* Type ----------------------------------------------------------------
        *
-       * There is no brand typeface — deliberately, and out of scope for this
-       * work — so the page takes its voice from the banner's own typography
-       * instead: a heavy, tightly tracked wordmark over a small, widely tracked
-       * uppercase line. The eyebrows below are that second style, and the
-       * headings are the first.
+       * No brand typeface, deliberately and out of scope, so the page borrows
+       * the two voices the brand already has: the banner's heavy tightly
+       * tracked wordmark for anything that speaks, and the mono face for
+       * anything that labels. A label is a label, a heading is a heading, and
+       * they never dress as each other.
        */
 
+      .eyebrow,
+      .nav a,
+      .badge,
+      .role,
+      .step-number,
+      .tile-label,
+      .review-where,
+      .thread {
+        font-family: var(--font-mono);
+      }
+
+      /*
+       * Muted, not `primary`, and the reason is a measurement: two of the five
+       * sections stand on `surface`, where verdigris measures 4.31 and fails AA
+       * for type this small. `text-muted` reads 5.51 on `bg` and 5.67 on
+       * `surface`, so one rule is safe wherever a section puts it. The colour
+       * goes where the ground is always `bg`: the headline's second clause, the
+       * step numbers, the figures, the links.
+       */
       .eyebrow {
         font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: var(--color-primary);
+        color: var(--color-text-muted);
       }
 
       .heading {
-        margin-block: 0.75rem 2.5rem;
-        max-width: 36rem;
-        font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+        margin-block: 0.85rem 2.25rem;
+        max-width: 30ch;
+        font-size: clamp(1.6rem, 3.2vw, 2.25rem);
         font-weight: 700;
         letter-spacing: -0.02em;
         line-height: 1.12;
@@ -344,119 +492,187 @@ const canonical = new URL('/', Astro.site);
       }
 
       .prose {
-        max-width: 40rem;
         display: grid;
-        gap: 1.25rem;
-      }
-
-      /*
-       * Every link in running text is underlined and thickens under the pointer,
-       * so colour is never the only thing marking it. The colour is the part that
-       * differs by context and is set where the context is: `primary` on the
-       * page's own ground, and the body colour on the gold panel, which no
-       * accented text reads well against.
-       */
-      .prose a,
-      .hero-note a,
-      .score-note a,
-      .footer a {
-        text-decoration-thickness: 1px;
-        text-underline-offset: 0.2em;
-        transition: text-decoration-thickness 0.15s ease;
-      }
-
-      .prose a:hover,
-      .hero-note a:hover,
-      .score-note a:hover,
-      .footer a:hover {
-        text-decoration-thickness: 2px;
+        gap: 1rem;
+        max-width: 36rem;
       }
 
       .prose a,
-      .hero-note a,
       .footer a {
         color: var(--color-primary);
       }
 
-      /* Hero ----------------------------------------------------------------
+      .prose a,
+      .footer a,
+      .nav a,
+      .nav-link {
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+        transition: color 0.2s ease;
+      }
+
+      .prose a:hover,
+      .footer a:hover {
+        text-decoration-thickness: 2px;
+      }
+
+      /* The bar -------------------------------------------------------------
        *
-       * The signature of the page: the mark comes into focus. The brand is an
-       * ocellus — the eye in a peacock's feather, which is where the myth put
-       * the hundred eyes of Argus — so the page opens the way an eye does,
-       * dilating and pulling into focus, and then keeps breathing behind the
-       * logotype. The artwork itself is never touched: the halo is drawn in CSS
-       * around it, so a redrawn banner cannot break the effect.
+       * Sticky, and translucent so the rings keep moving underneath it. The
+       * section links disappear on a narrow screen: a hamburger is a script,
+       * and the page is short enough to scroll.
        */
 
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background-color: color-mix(in srgb, var(--color-bg) 82%, transparent);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      .topbar-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 3.5rem;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        font-size: 1.0625rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        text-decoration: none;
+      }
+
+      .mark {
+        display: block;
+        height: auto;
+      }
+
+      .nav {
+        display: none;
+        gap: 1.5rem;
+        font-size: 0.8125rem;
+      }
+
+      .nav a,
+      .nav-link {
+        color: var(--color-text-muted);
+        text-decoration: none;
+      }
+
+      .nav a:hover,
+      .nav-link:hover {
+        color: var(--color-text);
+      }
+
+      .nav-link {
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .topbar-end {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      @media (min-width: 52rem) {
+        .nav {
+          display: flex;
+        }
+      }
+
+      /* Hero ----------------------------------------------------------------
+       *
+       * The rings are the page's atmosphere: concentric hairlines centred where
+       * the eye of the mark would be, dilating like an iris. They are drawn in
+       * CSS rather than taken from the artwork, so a redrawn mark cannot break
+       * them, and they are masked to nothing before they reach the edges so the
+       * pattern never reads as a grid.
+       */
+
+      .hero {
+        position: relative;
+        overflow-x: clip;
+        padding-top: clamp(2.5rem, 6vw, 4.5rem);
+        text-align: center;
+      }
+
+      .rings {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-radial-gradient(
+          circle at 50% 30%,
+          color-mix(in srgb, var(--color-accent) 26%, transparent) 0 1.5px,
+          transparent 1.5px 74px
+        );
+        mask-image: radial-gradient(circle at 50% 30%, black 8%, transparent 62%);
+        transform-origin: 50% 30%;
+      }
+
       .hero-inner {
+        position: relative;
         display: grid;
         justify-items: center;
-        text-align: center;
-        gap: 1.5rem;
+        gap: 1.35rem;
       }
 
-      .logotype {
-        position: relative;
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        max-width: 27rem;
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.8rem;
+        border: 1px solid var(--color-border);
+        border-radius: 999px;
+        background-color: color-mix(in srgb, var(--color-bg) 70%, transparent);
+        color: var(--color-text-muted);
+        font-size: 0.6875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
       }
 
-      /* A flex box around the artwork, so the inline SVG sits on no baseline and
-         needs no styling of its own — the banners come from `argusappsec/argus`
-         and this page does not reach inside them. */
-      .banner {
-        position: relative;
-        display: flex;
-        width: 100%;
-      }
-
-      /* Vertically the glow spills past the logotype; horizontally it stops at
-         its edges, because a decoration that reaches past the shell's padding
-         puts a scrollbar under the whole page on a phone. `breathe` scales it
-         6% at its widest, which is what the remaining room is for. */
-      .halo {
-        position: absolute;
-        inset: -35% 0;
+      /* The one gold dot on the page: the eye, at label size. */
+      .badge-dot {
+        width: 0.4rem;
+        height: 0.4rem;
         border-radius: 50%;
-        background: radial-gradient(
-          closest-side,
-          color-mix(in srgb, var(--color-accent) 34%, transparent),
-          color-mix(in srgb, var(--color-accent) 8%, transparent) 55%,
-          transparent 72%
-        );
-        filter: blur(6px);
+        background-color: var(--color-accent);
       }
 
       .hero-title {
-        max-width: 24ch;
-        font-size: clamp(2.25rem, 6.5vw, 4rem);
+        max-width: 20ch;
+        font-size: clamp(2.4rem, 6.4vw, 4.25rem);
         font-weight: 700;
-        letter-spacing: -0.03em;
-        line-height: 1.02;
+        letter-spacing: -0.035em;
+        line-height: 1;
         text-wrap: balance;
       }
 
-      .hero-lede {
-        max-width: 40rem;
-        font-size: clamp(1.0625rem, 2.2vw, 1.25rem);
+      /* `primary` on `bg`, which is a pair the build asserts: 5.68 on paper,
+         4.95 on night. The claim gets the colour, not the whole headline. */
+      .accented {
+        color: var(--color-primary);
+      }
+
+      .lede {
+        max-width: 38rem;
+        font-size: clamp(1.0625rem, 2vw, 1.1875rem);
         color: var(--color-text-muted);
       }
 
-      .hero-actions {
+      .actions {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 0.75rem;
-        margin-top: 0.5rem;
-      }
-
-      /* The quick start, for the reader who would rather try it than read about
-         it. A link, never the commands: those are the Guide's to keep current. */
-      .hero-note {
-        font-size: 0.9375rem;
-        color: var(--color-text-muted);
       }
 
       /* Buttons -------------------------------------------------------------
@@ -468,7 +684,7 @@ const canonical = new URL('/', Astro.site);
 
       .button {
         display: inline-block;
-        padding: 0.7rem 1.25rem;
+        padding: 0.7rem 1.2rem;
         border: 1px solid var(--color-border);
         border-radius: 0.6rem;
         font-size: 0.9375rem;
@@ -497,17 +713,149 @@ const canonical = new URL('/', Astro.site);
         color: var(--color-bg);
       }
 
+      .button-sm {
+        padding: 0.4rem 0.85rem;
+        font-size: 0.8125rem;
+      }
+
+      /* The review ----------------------------------------------------------
+       *
+       * The signature of the page, and the only place it raises its voice: the
+       * thing Argus does that a report cannot. Nothing here is `primary`,
+       * because verdigris on the dark `surface` measures 4.31 and would fail AA
+       * for body text; the severity chip carries the colour instead.
+       */
+
+      .review {
+        width: 100%;
+        max-width: 34rem;
+        margin-top: 1rem;
+        padding: 1.15rem 1.25rem 1.25rem;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        text-align: left;
+        box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--color-bg) 55%, transparent);
+      }
+
+      .review-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      .review-where {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .mark-sm {
+        opacity: 0.85;
+      }
+
+      .review-title {
+        margin-top: 0.85rem;
+        font-size: 1.0625rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .review-detail {
+        margin-top: 0.35rem;
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
+      .thread {
+        margin-top: 1rem;
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--color-border);
+        display: grid;
+        gap: 0.6rem;
+        font-size: 0.8125rem;
+        line-height: 1.5;
+      }
+
+      /* Wide enough for the longer of the two speakers plus its chevron, which is
+         `argus ›`. A wrapped speaker label stops reading as a transcript. */
+      .turn {
+        display: grid;
+        grid-template-columns: 4.5rem 1fr;
+        gap: 0.5rem;
+      }
+
+      .who {
+        color: var(--color-text-muted);
+        white-space: nowrap;
+      }
+
+      .who::after {
+        content: ' ›';
+      }
+
+      .who-argus {
+        color: var(--color-text);
+        font-weight: 600;
+      }
+
+      /* How it works --------------------------------------------------------
+       *
+       * Numbered because a review really does happen in this order. The three
+       * parts of the Argument below are not an order and carry no numbers.
+       */
+
+      .steps {
+        display: grid;
+        gap: 1.75rem;
+      }
+
+      @media (min-width: 46rem) {
+        .steps {
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1.5rem;
+        }
+      }
+
+      .step {
+        padding-top: 0.9rem;
+        border-top: 1px solid var(--color-border);
+      }
+
+      /* `primary` at label size only holds on `bg`, which is where this section
+         stands. Move the steps onto a raised band and the colour has to go. */
+      .step-number {
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        color: var(--color-primary);
+      }
+
+      .step-title {
+        margin-top: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .step-body {
+        margin-top: 0.35rem;
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
       /* Cards ---------------------------------------------------------------
        *
-       * Nothing on a card is `primary`: verdigris on the dark `surface`
-       * measures 4.31, under AA for body text. Titles are `text` and bodies are
-       * `text-muted`, which measure 13.05 and 5.67 there, and the card's own
-       * border carries the state instead of its type colour.
+       * On the raised band the cards are `bg`: the same two Tokens as
+       * everywhere else, swapped, so a card stays visible against the section
+       * it sits in without inventing a third neutral. Titles are `text` and
+       * bodies are `text-muted`, never `primary`.
        */
 
       .card {
         display: block;
-        padding: 1.5rem;
+        padding: 1.35rem;
         background-color: var(--color-surface);
         border: 1px solid var(--color-border);
         border-radius: 0.9rem;
@@ -516,8 +864,12 @@ const canonical = new URL('/', Astro.site);
           box-shadow 0.25s ease;
       }
 
+      .section-raised .card {
+        background-color: var(--color-bg);
+      }
+
       .card-title {
-        font-size: 1.125rem;
+        font-size: 1.0625rem;
         font-weight: 600;
         line-height: 1.3;
         letter-spacing: -0.01em;
@@ -525,17 +877,10 @@ const canonical = new URL('/', Astro.site);
       }
 
       .card-body {
-        margin-top: 0.6rem;
+        margin-top: 0.5rem;
         font-size: 0.9375rem;
         color: var(--color-text-muted);
       }
-
-      /* The Argument --------------------------------------------------------
-       *
-       * Three ingredients, not three steps, so they are a list and not a
-       * numbered sequence. The third carries a gold marker because the
-       * Argument's whole point is that it is the one nobody ships.
-       */
 
       .ingredients {
         display: grid;
@@ -551,11 +896,10 @@ const canonical = new URL('/', Astro.site);
       .role {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        margin-bottom: 0.9rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.14em;
+        gap: 0.55rem;
+        margin-bottom: 0.85rem;
+        font-size: 0.6875rem;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--color-text-muted);
       }
@@ -563,20 +907,20 @@ const canonical = new URL('/', Astro.site);
       .role::before {
         content: '';
         flex: none;
-        width: 0.45rem;
-        height: 0.45rem;
+        width: 0.4rem;
+        height: 0.4rem;
         border-radius: 50%;
         background-color: var(--color-text-muted);
-        box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--color-text-muted) 20%, transparent);
       }
 
+      /* The third ingredient is the one nobody ships, so it is the one in gold. */
       .ingredient-missing .role {
         color: var(--color-text);
       }
 
       .ingredient-missing .role::before {
         background-color: var(--color-accent);
-        box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--color-accent) 28%, transparent);
+        box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--color-accent) 28%, transparent);
       }
 
       /*
@@ -588,109 +932,97 @@ const canonical = new URL('/', Astro.site);
        * again: same decision, restated where nothing else survives.
        */
       .rule {
-        width: 4rem;
-        margin: 2.5rem 0 1.25rem;
+        width: 3.5rem;
+        margin: 2.25rem 0 1.1rem;
         border: 0;
         border-top: 2px solid var(--color-accent);
         transform-origin: left center;
       }
 
       .closing {
-        max-width: 34rem;
-        font-size: clamp(1.0625rem, 2vw, 1.25rem);
+        max-width: 32rem;
+        font-size: clamp(1.0625rem, 2vw, 1.2rem);
         font-weight: 600;
         letter-spacing: -0.01em;
         text-wrap: balance;
       }
 
-      /* The measured claim --------------------------------------------------
+      /* The score -----------------------------------------------------------
        *
-       * The one place gold is the ground, and the place ADR 0004's asymmetry
-       * decides the design: on paper gold fills, so the panel is a gold tint
-       * with `text` over it at 13.34. On night a gold tint is not gold at all —
-       * mixed with night it lands on a grey-green slate, because the two are
-       * nearly complementary — and gold is free to be a foreground there. So in
-       * dark the panel is `surface` and the gold speaks instead, in the eyebrow
-       * at 7.43 and in the chip below.
+       * Tiles on `bg`, which is what lets the figures be `primary`: on the dark
+       * `surface` that pair measures 4.31 and would fail.
        */
 
-      .measured {
-        padding: clamp(1.75rem, 5vw, 3rem);
-        background-color: var(--color-surface);
-        border: 1px solid color-mix(in oklab, var(--color-accent) 40%, var(--color-border));
-        border-radius: 1.1rem;
-      }
-
-      :root:not([data-theme='light']) .measured .eyebrow {
-        color: var(--color-accent);
-      }
-
-      :root[data-theme='light'] .measured {
-        background-color: color-mix(in oklab, var(--color-accent) 20%, var(--color-bg));
-        border-color: color-mix(in oklab, var(--color-accent) 55%, var(--color-bg));
-      }
-
-      .measured .heading {
-        margin-block-end: 1.5rem;
-      }
-
-      .measured-body {
-        max-width: 44rem;
-      }
-
       .score {
-        margin-top: 1.75rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        max-width: 34rem;
       }
 
-      .chip {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        background-color: var(--color-accent);
-        border-radius: 0.6rem;
-        color: var(--color-bg);
-        font-size: clamp(1.0625rem, 2.6vw, 1.5rem);
+      .tile {
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.75rem;
+      }
+
+      .tile-figure {
+        font-size: clamp(1.5rem, 4vw, 2.1rem);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.03em;
+        color: var(--color-primary);
+      }
+
+      .tile-label {
+        margin-top: 0.15rem;
+        font-size: 0.6875rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+
+      /*
+       * Gold as a rule rather than as type: on paper it is unreadable as a
+       * foreground at 1.76, and a 2px band is the shape ADR 0004 gives it there.
+       */
+      .claim {
+        padding-left: 1rem;
+        border-left: 2px solid var(--color-accent);
+        font-size: clamp(1.0625rem, 2vw, 1.15rem);
+        font-weight: 600;
+      }
+
+      /* The chip is the other gold shape: a fill, with night over it in either
+         theme. `text` is night in light and `bg` is night in dark, which is the
+         asymmetry `::selection` in the Token layer already follows. */
+      .chip {
+        display: inline-block;
+        padding: 0.45rem 0.9rem;
+        border-radius: 0.5rem;
+        background-color: var(--color-accent);
+        color: var(--color-bg);
+        font-weight: 700;
       }
 
       :root[data-theme='light'] .chip {
         color: var(--color-text);
       }
 
-      .score-note {
-        margin-top: 0.9rem;
-        max-width: 40rem;
-        font-size: 0.9375rem;
-      }
-
-      .score-note code {
+      .chip-sm {
+        padding: 0.1rem 0.5rem;
+        border-radius: 0.35rem;
         font-family: var(--font-mono);
-        font-size: 0.875em;
+        font-size: 0.6875rem;
+        letter-spacing: 0.04em;
       }
 
-      .claim {
-        padding-left: 1.1rem;
-        border-left: 2px solid var(--color-accent);
-        font-size: clamp(1.0625rem, 2vw, 1.2rem);
-        font-weight: 600;
-      }
-
-      /* The handoff ----------------------------------------------------------
-       *
-       * The band is `surface`, so the cards standing on it are `bg`: the same
-       * two Tokens as everywhere else, swapped, which keeps a card visible
-       * against the section it sits in without a third neutral.
-       */
-
-      .section-raised .card {
-        background-color: var(--color-bg);
-      }
+      /* The handoff ---------------------------------------------------------- */
 
       .guide-pages {
         display: grid;
         gap: 1rem;
-        margin-top: 2.5rem;
       }
 
       @media (min-width: 40rem) {
@@ -704,8 +1036,8 @@ const canonical = new URL('/', Astro.site);
         text-decoration: none;
       }
 
-      /* Only the cards that are links react to a pointer. The three ingredients
-         are prose in a box and stay still. */
+      /* Only the cards that are links react to a pointer. The ingredients are
+         prose in a box and stay still. */
       .guide-page:hover {
         border-color: var(--color-primary);
         box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--color-text) 10%, transparent);
@@ -720,7 +1052,7 @@ const canonical = new URL('/', Astro.site);
       /* Footer --------------------------------------------------------------- */
 
       .footer {
-        padding-block: 2.5rem;
+        padding-block: 2.25rem;
         border-top: 1px solid var(--color-border);
         font-size: 0.9375rem;
         color: var(--color-text-muted);
@@ -729,20 +1061,21 @@ const canonical = new URL('/', Astro.site);
       .footer-inner {
         display: flex;
         flex-wrap: wrap;
+        align-items: center;
         justify-content: space-between;
         gap: 1rem 2rem;
+      }
+
+      .footer-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
       }
 
       .footer-links {
         display: flex;
         flex-wrap: wrap;
         gap: 1.5rem;
-      }
-
-      .footer a {
-        color: var(--color-primary);
-        text-decoration-thickness: 1px;
-        text-underline-offset: 0.2em;
       }
 
       /* Motion --------------------------------------------------------------
@@ -754,36 +1087,40 @@ const canonical = new URL('/', Astro.site);
        */
 
       @media (prefers-reduced-motion: no-preference) {
-        .hero-inner > * {
-          animation: rise 0.75s cubic-bezier(0.22, 0.68, 0.3, 1) both;
+        html {
+          scroll-behavior: smooth;
         }
 
-        /* The eye focusing: the logotype dilates and sharpens, and the three
-           lines under it arrive in reading order. */
-        .logotype {
-          animation: focus 1.1s cubic-bezier(0.22, 0.68, 0.3, 1) both;
+        .hero-inner > * {
+          animation: rise 0.7s cubic-bezier(0.22, 0.68, 0.3, 1) both;
         }
 
         .hero-title {
-          animation-delay: 0.35s;
+          animation-delay: 0.08s;
         }
 
-        .hero-lede {
-          animation-delay: 0.5s;
+        .lede {
+          animation-delay: 0.18s;
         }
 
-        .hero-actions {
-          animation-delay: 0.62s;
+        .actions {
+          animation-delay: 0.28s;
         }
 
-        .hero-note {
-          animation-delay: 0.72s;
-        }
-
-        .halo {
+        /* The card lands last and from further away: it is the one thing on the
+           page worth waiting a third of a second for. */
+        .review {
           animation:
-            dilate 1.6s cubic-bezier(0.22, 0.68, 0.3, 1) both,
-            breathe 13s 1.6s ease-in-out infinite alternate;
+            settle 0.9s 0.38s cubic-bezier(0.22, 0.68, 0.3, 1) both,
+            rise 0s both;
+        }
+
+        /* The iris: out once on arrival, then a slow dilation that never
+           finishes. Slow enough that it reads as light rather than as movement. */
+        .rings {
+          animation:
+            iris 2.2s cubic-bezier(0.22, 0.68, 0.3, 1) both,
+            dilate 19s 2.2s ease-in-out infinite alternate;
         }
 
         .card {
@@ -830,37 +1167,31 @@ const canonical = new URL('/', Astro.site);
       @keyframes rise {
         from {
           opacity: 0;
-          transform: translateY(1.25rem);
+          transform: translateY(1rem);
         }
       }
 
-      @keyframes focus {
+      @keyframes settle {
         from {
           opacity: 0;
-          transform: scale(0.96);
-          filter: blur(8px);
+          transform: translateY(2.25rem) scale(0.985);
+        }
+      }
+
+      @keyframes iris {
+        from {
+          opacity: 0;
+          transform: scale(0.55);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
         }
       }
 
       @keyframes dilate {
-        from {
-          opacity: 0;
-          transform: scale(0.35);
-        }
         to {
-          opacity: 0.6;
-          transform: scale(1);
-        }
-      }
-
-      @keyframes breathe {
-        from {
-          opacity: 0.6;
-          transform: scale(1);
-        }
-        to {
-          opacity: 0.9;
-          transform: scale(1.06);
+          transform: scale(1.07);
         }
       }
 
@@ -868,17 +1199,6 @@ const canonical = new URL('/', Astro.site);
         from {
           transform: scaleX(0);
         }
-      }
-
-      /* One variant per theme, and the artwork decides which: the banners paint
-         the feather in peacock teal on paper and in verdigris on night, which is
-         `primary` flipping, drawn by hand upstream. Matched the way the Token
-         layer matches, so a document rendered before the theme script runs shows
-         the dark variant over the dark ground rather than a flash of the other
-         pair. */
-      :root:not([data-theme='light']) .banner-light,
-      :root[data-theme='light'] .banner-dark {
-        display: none;
       }
     </style>
   </body>
