@@ -1,0 +1,885 @@
+---
+/**
+ * The Landing. Its reader has never heard of Argus, so the page has one job:
+ * make the Argument — scanners are precise but shallow, a model alone drowns the
+ * signal, and the organization is the missing third ingredient — and hand off.
+ *
+ * It restates the Argument in its own words, because an argument does not go
+ * stale. It restates no Inventory: the scanners, the built-in skills, the
+ * channels and the quick-start commands are all things that change as Argus
+ * changes, and every one of them is reached by a link instead. The list of Guide
+ * pages is read from the Mirror's frontmatter — see `src/landing/handoff.ts` for
+ * why frontmatter and never prose.
+ *
+ * This is a plain Astro page, outside Starlight's layout, which is why it
+ * carries its own document head, its own theme resolution (ADR 0007) and its own
+ * reset. All of its colour comes from the Tokens; none of it is a literal.
+ */
+import { getCollection } from 'astro:content';
+
+import BannerDark from '../assets/brand/argus-banner-dark.svg';
+import BannerLight from '../assets/brand/argus-banner-light.svg';
+import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
+import '../styles/global.css';
+
+const { overview, pages } = guideHandoff(await getCollection('docs'));
+
+/** The Mirror's front page carries its own title and description, so it is
+ *  preferred; `GUIDE_ROOT` covers the type's other case and points at the same
+ *  URL. Neither is better than the Mirror underneath it. */
+const guideHref = overview?.href ?? GUIDE_ROOT;
+
+const REPOSITORY = 'https://github.com/argusappsec/argus';
+const SECURITY_CONTACT = 'security@argusappsec.com';
+
+const TITLE = 'Argus — an application security agent you can argue with';
+const DESCRIPTION =
+  'Argus is an open-source application security agent: it drives real scanners, ' +
+  'judges what they find by how your own team builds and ships, and answers back when you disagree.';
+
+const canonical = new URL('/', Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{TITLE}</title>
+    <meta name="description" content={DESCRIPTION} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/argus.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={TITLE} />
+    <meta property="og:description" content={DESCRIPTION} />
+    <meta name="twitter:card" content="summary" />
+
+    {
+      /**
+       * The one script on the page, and the reason ADR 0007 exists: outside
+       * Starlight's layout nothing sets `data-theme`, so without this the
+       * Landing is dark for every reader — including one who chose light in the
+       * Guide two clicks ago. Inline and in the head, because a theme resolved
+       * after first paint is a flash of the wrong colours.
+       *
+       * Deliberately the same expression as Starlight's own ThemeProvider, on
+       * the same storage key: Starlight writes `''` for "auto", so an empty
+       * string correctly falls through to the operating system's preference.
+       */
+    }
+    <script is:inline>
+      const stored = typeof localStorage !== 'undefined' && localStorage.getItem('starlight-theme');
+      const theme =
+        stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+    </script>
+  </head>
+
+  <body>
+    <main>
+      <section class="section hero">
+        <div class="shell hero-inner">
+          <p class="logotype">
+            <span class="halo" aria-hidden="true"></span>
+            <span class="banner banner-light"><BannerLight width="100%" /></span>
+            <span class="banner banner-dark"><BannerDark width="100%" /></span>
+          </p>
+
+          <h1 class="hero-title">A security review you can argue with.</h1>
+
+          <p class="hero-lede">
+            Argus is an open-source application security agent. It drives real scanners, weighs what
+            they find against how your organization actually builds software, and reports in plain
+            language what deserves attention. Then you push back — and it answers.
+          </p>
+
+          <p class="hero-actions">
+            <a class="button button-primary" href={guideHref}>Read the Guide</a>
+            <a class="button" href={REPOSITORY}>Argus on GitHub</a>
+          </p>
+
+          <p class="hero-note">
+            Or skip the reading: <a href="/guide/getting-started/">install it and run the first
+            review</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="the-case">
+        <div class="shell">
+          <p class="eyebrow reveal">The case</p>
+          <h2 class="heading reveal" id="the-case">
+            Precision, reasoning, and the part that decides what matters.
+          </h2>
+
+          <ul class="ingredients">
+            <li class="card ingredient reveal">
+              <p class="role">The scanners</p>
+              <h3 class="card-title">Precise about anything with a signature.</h3>
+              <p class="card-body">
+                A rule engine finds what somebody has already described. A missing ownership check
+                is not a syntax error and matches no pattern: nothing in the code looks wrong, only
+                the assumption about who was allowed to ask. No number of rules turns that into a
+                match.
+              </p>
+            </li>
+
+            <li class="card ingredient reveal">
+              <p class="role">The model</p>
+              <h3 class="card-title">Able to reason, easy to flood.</h3>
+              <p class="card-body">
+                A language model can read a function and follow what it implies. Left alone with a
+                repository it also produces more maybes than anyone will work through, and a list
+                nobody triages says about as much as no list at all.
+              </p>
+            </li>
+
+            <li class="card ingredient ingredient-missing reveal">
+              <p class="role">Your organization</p>
+              <h3 class="card-title">The context that settles it.</h3>
+              <p class="card-body">
+                Whether a finding matters here depends on what you build, which risks you already
+                accepted, and what your team decided last quarter. Argus carries that into every
+                review: scanners run as structured tools, the model works through curated
+                methodology, and the judgement is made against your stack and your tolerance instead
+                of a generic severity table.
+              </p>
+            </li>
+          </ul>
+
+          <hr class="rule reveal" />
+          <p class="closing reveal">
+            Remove any one of the three and what is left is a tool people learn to ignore.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="measured">
+        <div class="shell">
+          <div class="measured reveal">
+            <p class="eyebrow">Measured</p>
+            <h2 class="heading" id="measured">A claim you can go and check.</h2>
+            <p class="measured-body">
+              Broken authorization is where the first two ingredients do worst: there is no signature
+              for a scanner to match, and nothing is easier for a model to invent. Argus's
+              authorization audit was run against VAmPI, a deliberately vulnerable API used as a
+              benchmark — it found every broken-authorization flaw in it, and reported nothing that
+              was not there.
+            </p>
+
+            <p class="score"><span class="chip">100% recall · 100% precision</span></p>
+            <p class="score-note">
+              <code>authz-audit</code> on VAmPI. Argus follows methodology written down as skills, which
+              your team can extend or replace — <a href="/guide/skills/">how skills work</a>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="own-model">
+        <div class="shell">
+          <p class="eyebrow reveal">Bring your own model</p>
+          <h2 class="heading reveal" id="own-model">Argus speaks a protocol, not a vendor.</h2>
+
+          <div class="prose reveal">
+            <p>
+              A provider's type names a wire protocol rather than a vendor, and any server that
+              speaks it is a candidate: a hosted API, or a runtime on hardware you own — Ollama and
+              vLLM speak it, and they are examples rather than a list. A candidate is not a promise.
+              Argus implements the protocol and certifies nobody's server, so the honest answer for
+              any one endpoint comes from checking it — and what to check, along with what Argus
+              needs from a model, is written down in the Guide.
+            </p>
+
+            <p class="claim">
+              Point Argus at a model running on your own infrastructure, and your code never leaves
+              it.
+            </p>
+
+            <p>
+              <a href="/guide/llm-providers/">What Argus requires from a model</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-raised" aria-labelledby="the-guide">
+        <div class="shell">
+          <p class="eyebrow reveal">Read the Guide</p>
+          <h2 class="heading reveal" id="the-guide">Everything you have to run, and how to run it.</h2>
+
+          <div class="prose reveal">
+            {overview?.description && <p>{overview.description}</p>}
+            <p>
+              Argus runs as one long-lived daemon for the whole organization, reached from the places
+              your team already works. Which places, and how to connect them, is what these pages
+              are for.
+            </p>
+          </div>
+
+          <ul class="guide-pages">
+            {
+              pages.map((page) => (
+                <li class="reveal">
+                  <a class="card guide-page" href={page.href}>
+                    <h3 class="card-title">{page.title}</h3>
+                    {page.description && <p class="card-body">{page.description}</p>}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="section footer">
+      <div class="shell footer-inner">
+        <p>
+          The Guide is authored in the Argus repository, next to the code it describes, and published
+          here.
+        </p>
+        <p class="footer-links">
+          <a href={REPOSITORY}>argusappsec/argus</a>
+          <a href={`mailto:${SECURITY_CONTACT}`}>Report a vulnerability</a>
+        </p>
+      </div>
+    </footer>
+
+    <style>
+      /*
+       * Starlight's reset ships only on Starlight's own routes, and
+       * `@astrojs/starlight-tailwind` restores just borders and font families
+       * for pages like this one. So the Landing brings the little else it needs
+       * rather than pulling in Tailwind's full preflight, which Starlight's
+       * stylesheet is not written to sit under.
+       */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        font-size: 1.0625rem;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      ul {
+        margin: 0;
+      }
+
+      ul {
+        padding: 0;
+        list-style: none;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+
+      /* Layout ---------------------------------------------------------------
+       *
+       * One shell, one section rhythm. Both are declared once and never
+       * re-declared per section: a section modifier may add a background, never
+       * a padding, so no two rules in here ever argue about spacing.
+       */
+
+      .shell {
+        width: 100%;
+        max-width: 68rem;
+        margin-inline: auto;
+        padding-inline: clamp(1.25rem, 5vw, 2.5rem);
+      }
+
+      .section {
+        padding-block: clamp(3.25rem, 7.5vw, 5.5rem);
+      }
+
+      .section-raised {
+        background-color: var(--color-surface);
+        border-block: 1px solid var(--color-border);
+      }
+
+      /* Type ----------------------------------------------------------------
+       *
+       * There is no brand typeface — deliberately, and out of scope for this
+       * work — so the page takes its voice from the banner's own typography
+       * instead: a heavy, tightly tracked wordmark over a small, widely tracked
+       * uppercase line. The eyebrows below are that second style, and the
+       * headings are the first.
+       */
+
+      .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--color-primary);
+      }
+
+      .heading {
+        margin-block: 0.75rem 2.5rem;
+        max-width: 36rem;
+        font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.12;
+        text-wrap: balance;
+      }
+
+      .prose {
+        max-width: 40rem;
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      /*
+       * Every link in running text is underlined and thickens under the pointer,
+       * so colour is never the only thing marking it. The colour is the part that
+       * differs by context and is set where the context is: `primary` on the
+       * page's own ground, and the body colour on the gold panel, which no
+       * accented text reads well against.
+       */
+      .prose a,
+      .hero-note a,
+      .score-note a,
+      .footer a {
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+        transition: text-decoration-thickness 0.15s ease;
+      }
+
+      .prose a:hover,
+      .hero-note a:hover,
+      .score-note a:hover,
+      .footer a:hover {
+        text-decoration-thickness: 2px;
+      }
+
+      .prose a,
+      .hero-note a,
+      .footer a {
+        color: var(--color-primary);
+      }
+
+      /* Hero ----------------------------------------------------------------
+       *
+       * The signature of the page: the mark comes into focus. The brand is an
+       * ocellus — the eye in a peacock's feather, which is where the myth put
+       * the hundred eyes of Argus — so the page opens the way an eye does,
+       * dilating and pulling into focus, and then keeps breathing behind the
+       * logotype. The artwork itself is never touched: the halo is drawn in CSS
+       * around it, so a redrawn banner cannot break the effect.
+       */
+
+      .hero-inner {
+        display: grid;
+        justify-items: center;
+        text-align: center;
+        gap: 1.5rem;
+      }
+
+      .logotype {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        max-width: 27rem;
+      }
+
+      /* A flex box around the artwork, so the inline SVG sits on no baseline and
+         needs no styling of its own — the banners come from `argusappsec/argus`
+         and this page does not reach inside them. */
+      .banner {
+        position: relative;
+        display: flex;
+        width: 100%;
+      }
+
+      /* Vertically the glow spills past the logotype; horizontally it stops at
+         its edges, because a decoration that reaches past the shell's padding
+         puts a scrollbar under the whole page on a phone. `breathe` scales it
+         6% at its widest, which is what the remaining room is for. */
+      .halo {
+        position: absolute;
+        inset: -35% 0;
+        border-radius: 50%;
+        background: radial-gradient(
+          closest-side,
+          color-mix(in srgb, var(--color-accent) 34%, transparent),
+          color-mix(in srgb, var(--color-accent) 8%, transparent) 55%,
+          transparent 72%
+        );
+        filter: blur(6px);
+      }
+
+      .hero-title {
+        max-width: 24ch;
+        font-size: clamp(2.25rem, 6.5vw, 4rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.02;
+        text-wrap: balance;
+      }
+
+      .hero-lede {
+        max-width: 40rem;
+        font-size: clamp(1.0625rem, 2.2vw, 1.25rem);
+        color: var(--color-text-muted);
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      /* The quick start, for the reader who would rather try it than read about
+         it. A link, never the commands: those are the Guide's to keep current. */
+      .hero-note {
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
+      /* Buttons -------------------------------------------------------------
+       *
+       * The filled one is `bg` over `primary`, one of the pairs ADR 0004
+       * measured and the build asserts, so the loudest element on the page is
+       * also one of the checked ones.
+       */
+
+      .button {
+        display: inline-block;
+        padding: 0.7rem 1.25rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.6rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition:
+          border-color 0.2s ease,
+          background-color 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .button:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      .button-primary {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+        color: var(--color-bg);
+      }
+
+      .button-primary:hover {
+        background-color: color-mix(in oklab, var(--color-primary) 88%, var(--color-text));
+        border-color: color-mix(in oklab, var(--color-primary) 88%, var(--color-text));
+        color: var(--color-bg);
+      }
+
+      /* Cards ---------------------------------------------------------------
+       *
+       * Nothing on a card is `primary`: verdigris on the dark `surface`
+       * measures 4.31, under AA for body text. Titles are `text` and bodies are
+       * `text-muted`, which measure 13.05 and 5.67 there, and the card's own
+       * border carries the state instead of its type colour.
+       */
+
+      .card {
+        display: block;
+        padding: 1.5rem;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+        transition:
+          border-color 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+
+      .card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.3;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+
+      .card-body {
+        margin-top: 0.6rem;
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
+      /* The Argument --------------------------------------------------------
+       *
+       * Three ingredients, not three steps, so they are a list and not a
+       * numbered sequence. The third carries a gold marker because the
+       * Argument's whole point is that it is the one nobody ships.
+       */
+
+      .ingredients {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 52rem) {
+        .ingredients {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .role {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.9rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+
+      .role::before {
+        content: '';
+        flex: none;
+        width: 0.45rem;
+        height: 0.45rem;
+        border-radius: 50%;
+        background-color: var(--color-text-muted);
+        box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--color-text-muted) 20%, transparent);
+      }
+
+      .ingredient-missing .role {
+        color: var(--color-text);
+      }
+
+      .ingredient-missing .role::before {
+        background-color: var(--color-accent);
+        box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--color-accent) 28%, transparent);
+      }
+
+      /*
+       * The Token layer already makes an `hr` a gold band, but it only sets the
+       * colour and the top width — it is written for Starlight's routes, where
+       * Starlight's reset has already cleared the browser's inset border. This
+       * page has no such reset, so the border has to be cleared here, and
+       * clearing it unlayered takes the Token layer's colour with it. Hence both
+       * again: same decision, restated where nothing else survives.
+       */
+      .rule {
+        width: 4rem;
+        margin: 2.5rem 0 1.25rem;
+        border: 0;
+        border-top: 2px solid var(--color-accent);
+        transform-origin: left center;
+      }
+
+      .closing {
+        max-width: 34rem;
+        font-size: clamp(1.0625rem, 2vw, 1.25rem);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+
+      /* The measured claim --------------------------------------------------
+       *
+       * The one place gold is the ground, and the place ADR 0004's asymmetry
+       * decides the design: on paper gold fills, so the panel is a gold tint
+       * with `text` over it at 13.34. On night a gold tint is not gold at all —
+       * mixed with night it lands on a grey-green slate, because the two are
+       * nearly complementary — and gold is free to be a foreground there. So in
+       * dark the panel is `surface` and the gold speaks instead, in the eyebrow
+       * at 7.43 and in the chip below.
+       */
+
+      .measured {
+        padding: clamp(1.75rem, 5vw, 3rem);
+        background-color: var(--color-surface);
+        border: 1px solid color-mix(in oklab, var(--color-accent) 40%, var(--color-border));
+        border-radius: 1.1rem;
+      }
+
+      :root:not([data-theme='light']) .measured .eyebrow {
+        color: var(--color-accent);
+      }
+
+      :root[data-theme='light'] .measured {
+        background-color: color-mix(in oklab, var(--color-accent) 20%, var(--color-bg));
+        border-color: color-mix(in oklab, var(--color-accent) 55%, var(--color-bg));
+      }
+
+      .measured .heading {
+        margin-block-end: 1.5rem;
+      }
+
+      .measured-body {
+        max-width: 44rem;
+      }
+
+      .score {
+        margin-top: 1.75rem;
+      }
+
+      .chip {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: var(--color-accent);
+        border-radius: 0.6rem;
+        color: var(--color-bg);
+        font-size: clamp(1.0625rem, 2.6vw, 1.5rem);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+
+      :root[data-theme='light'] .chip {
+        color: var(--color-text);
+      }
+
+      .score-note {
+        margin-top: 0.9rem;
+        max-width: 40rem;
+        font-size: 0.9375rem;
+      }
+
+      .score-note code {
+        font-family: var(--font-mono);
+        font-size: 0.875em;
+      }
+
+      .claim {
+        padding-left: 1.1rem;
+        border-left: 2px solid var(--color-accent);
+        font-size: clamp(1.0625rem, 2vw, 1.2rem);
+        font-weight: 600;
+      }
+
+      /* The handoff ----------------------------------------------------------
+       *
+       * The band is `surface`, so the cards standing on it are `bg`: the same
+       * two Tokens as everywhere else, swapped, which keeps a card visible
+       * against the section it sits in without a third neutral.
+       */
+
+      .section-raised .card {
+        background-color: var(--color-bg);
+      }
+
+      .guide-pages {
+        display: grid;
+        gap: 1rem;
+        margin-top: 2.5rem;
+      }
+
+      @media (min-width: 40rem) {
+        .guide-pages {
+          grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+        }
+      }
+
+      .guide-page {
+        height: 100%;
+        text-decoration: none;
+      }
+
+      /* Only the cards that are links react to a pointer. The three ingredients
+         are prose in a box and stay still. */
+      .guide-page:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--color-text) 10%, transparent);
+      }
+
+      .guide-page:hover .card-title {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.2em;
+      }
+
+      /* Footer --------------------------------------------------------------- */
+
+      .footer {
+        padding-block: 2.5rem;
+        border-top: 1px solid var(--color-border);
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
+      .footer-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem 2rem;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+      }
+
+      .footer a {
+        color: var(--color-primary);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.2em;
+      }
+
+      /* Motion --------------------------------------------------------------
+       *
+       * Every animation lives inside this one query, and the page's resting
+       * state is the finished state. So a reader who asks for less motion is not
+       * served a blank page, and neither is a browser without scroll-driven
+       * animations: they both get the page with nothing moving.
+       */
+
+      @media (prefers-reduced-motion: no-preference) {
+        .hero-inner > * {
+          animation: rise 0.75s cubic-bezier(0.22, 0.68, 0.3, 1) both;
+        }
+
+        /* The eye focusing: the logotype dilates and sharpens, and the three
+           lines under it arrive in reading order. */
+        .logotype {
+          animation: focus 1.1s cubic-bezier(0.22, 0.68, 0.3, 1) both;
+        }
+
+        .hero-title {
+          animation-delay: 0.35s;
+        }
+
+        .hero-lede {
+          animation-delay: 0.5s;
+        }
+
+        .hero-actions {
+          animation-delay: 0.62s;
+        }
+
+        .hero-note {
+          animation-delay: 0.72s;
+        }
+
+        .halo {
+          animation:
+            dilate 1.6s cubic-bezier(0.22, 0.68, 0.3, 1) both,
+            breathe 13s 1.6s ease-in-out infinite alternate;
+        }
+
+        .card {
+          transition:
+            border-color 0.25s ease,
+            box-shadow 0.25s ease,
+            transform 0.25s ease;
+        }
+
+        .guide-page:hover {
+          transform: translateY(-2px);
+        }
+
+        /*
+         * Scroll-driven, so each element arrives on its own as it enters —
+         * a stagger the page gets from the reader's scrolling rather than from a
+         * table of delays. A browser without scroll-driven animations skips the
+         * block and shows the page, which is the resting state anyway.
+         *
+         * Longhands, and not the `animation` shorthand: the build minifies with
+         * Lightning CSS, which folds `animation-timeline` into a shorthand in
+         * the same rule and emits `animation: 1s linear both rise view()` — and
+         * the timeline was removed from that shorthand, so the whole declaration
+         * is invalid and dropped. Chrome agrees: `CSS.supports('animation', '1s
+         * linear both rise view()')` is false. The symptom is no reveal at all,
+         * in every browser, with nothing in the build to say so.
+         */
+        @supports (animation-timeline: view()) {
+          .reveal {
+            animation-name: rise;
+            animation-duration: 1s;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: view();
+            animation-range: entry 6% entry 55%;
+          }
+
+          .rule {
+            animation-name: draw;
+          }
+        }
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(1.25rem);
+        }
+      }
+
+      @keyframes focus {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+          filter: blur(8px);
+        }
+      }
+
+      @keyframes dilate {
+        from {
+          opacity: 0;
+          transform: scale(0.35);
+        }
+        to {
+          opacity: 0.6;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes breathe {
+        from {
+          opacity: 0.6;
+          transform: scale(1);
+        }
+        to {
+          opacity: 0.9;
+          transform: scale(1.06);
+        }
+      }
+
+      @keyframes draw {
+        from {
+          transform: scaleX(0);
+        }
+      }
+
+      /* One variant per theme, and the artwork decides which: the banners paint
+         the feather in peacock teal on paper and in verdigris on night, which is
+         `primary` flipping, drawn by hand upstream. Matched the way the Token
+         layer matches, so a document rendered before the theme script runs shows
+         the dark variant over the dark ground rather than a flash of the other
+         pair. */
+      :root:not([data-theme='light']) .banner-light,
+      :root[data-theme='light'] .banner-dark {
+        display: none;
+      }
+    </style>
+  </body>
+</html>
