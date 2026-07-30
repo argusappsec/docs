@@ -29,7 +29,9 @@ import { getCollection } from 'astro:content';
 
 import Mark from '../assets/brand/argus.svg';
 import GitHubMark from '../components/GitHubMark.astro';
+import ProviderLogo from '../components/ProviderLogo.astro';
 import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
+import { PROVIDER_MARKS } from '../landing/provider-marks';
 import '../styles/global.css';
 
 const { overview, pages } = guideHandoff(await getCollection('docs'));
@@ -103,8 +105,8 @@ const STRENGTHS = [
   {
     label: 'Your model',
     title: 'Bring your own AI.',
-    detail: 'A hosted API, or a model on hardware you own.',
-    claim: 'Run it locally and your code never leaves your infrastructure.',
+    detail: 'Not ours, and not a vendor of our choosing.',
+    claim: 'A hosted API, or a model running on hardware you own.',
   },
   {
     label: 'Your context',
@@ -120,12 +122,16 @@ const STRENGTHS = [
   },
 ];
 
+
 /** ADR 0004 keeps gold out of small type, so the figures are `primary` on `bg`. */
 const SCORE = [
   { figure: '100%', label: 'recall' },
   { figure: '100%', label: 'precision' },
   { figure: 'VAmPI', label: 'benchmark' },
 ];
+
+/** Stamped at build time, so the footer never claims a year that has passed. */
+const YEAR = new Date().getFullYear();
 
 const canonical = new URL('/', Astro.site);
 ---
@@ -322,39 +328,88 @@ const canonical = new URL('/', Astro.site);
       </section>
 
 
-      <section class="section section-raised" id="docs" aria-labelledby="docs-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Docs</p>
-          <h2 class="heading reveal" id="docs-heading">Everything you have to run.</h2>
+      <section class="section section-raised" id="your-ai" aria-labelledby="your-ai-heading">
+        <div class="shell split">
+          <div class="split-main">
+            <p class="eyebrow reveal">Your AI</p>
+            <h2 class="heading reveal" id="your-ai-heading">Use your own AI.</h2>
 
-          <ul class="guide-pages">
-            {
-              pages.map((page) => (
-                <li class="reveal">
-                  <a class="card guide-page" href={page.href}>
-                    <h3 class="card-title">{page.title}</h3>
-                    {page.description && <p class="card-body">{page.description}</p>}
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
+            <div class="prose reveal">
+              <p>
+                A provider type names a protocol, not a vendor. Anything that speaks one is a
+                candidate, whether it answers from a hosted API or from hardware you own.
+              </p>
+              <p class="claim">
+                Run the model on your own infrastructure and your code never leaves it.
+              </p>
+              <p class="footnote">
+                Examples of servers that speak it, not a supported list. Argus implements the
+                protocol and certifies nobody's server, so the only list that counts is the one you
+                test.
+              </p>
+              <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
+            </div>
+          </div>
+
+          <div class="reel reveal">
+            <ul class="reel-column">
+              {
+                PROVIDER_MARKS.map((mark) => (
+                  <li class="reel-item">
+                    <ProviderLogo mark={mark} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+            </ul>
+            <ul class="reel-column" aria-hidden="true">
+              {
+                PROVIDER_MARKS.map((mark) => (
+                  <li class="reel-item">
+                    <ProviderLogo mark={mark} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
         </div>
       </section>
     </main>
 
     <footer class="footer">
       <div class="shell footer-inner">
-        <p class="footer-brand">
-          <Mark class="mark" width="20" />
-          The Guide is written in the Argus repository and published here.
-        </p>
-        <p class="footer-links">
-          <a href={guideHref}>Docs</a>
+        <div class="footer-brand">
+          <p class="brand">
+            <Mark class="mark" width="22" />
+            <span>Argus</span>
+          </p>
+          <p class="footer-tagline">
+            An open-source application security agent that knows your organization.
+          </p>
+        </div>
+
+        <nav class="footer-column" aria-label="Documentation">
+          <p class="footer-heading">Docs</p>
+          <a href={guideHref}>All of it</a>
+          {
+            /* The first few pages in the Guide's own order, so this stays generated
+               from the Mirror's frontmatter without becoming a second sitemap. */
+          }
+          {pages.slice(0, 3).map((page) => <a href={page.href}>{page.title}</a>)}
+        </nav>
+
+        <nav class="footer-column" aria-label="Project">
+          <p class="footer-heading">Project</p>
           <a href={REPOSITORY}>GitHub</a>
           <a href={`mailto:${SECURITY_CONTACT}`}>Report a vulnerability</a>
-        </p>
+        </nav>
       </div>
+
+      <p class="shell footer-note">
+        © {YEAR} Davide Imola. Apache 2.0. Built with{' '}
+        <span class="heart" aria-hidden="true">♥</span><span class="sr-only">love</span> and Go.
+      </p>
     </footer>
 
     <style>
@@ -508,6 +563,11 @@ const canonical = new URL('/', Astro.site);
       }
 
       .prose a,
+      .footer .brand {
+        color: var(--color-text);
+        font-size: 1rem;
+      }
+
       .footer a {
         color: var(--color-primary);
       }
@@ -1113,64 +1173,130 @@ const canonical = new URL('/', Astro.site);
         letter-spacing: 0.04em;
       }
 
-      /* The handoff ---------------------------------------------------------- */
+      /* Your AI -------------------------------------------------------------
+       *
+       * Two columns: the argument on one side, the marks on the other, travelling
+       * up their own column. Moving, because a list that scrolls reads as an open
+       * set while a fixed grid of marks reads as a closed one — and the whole
+       * distinction here is that these speak a protocol rather than being blessed
+       * by anybody.
+       *
+       * The column is duplicated and travels exactly its own height, so the loop
+       * has no seam. The copy is hidden from assistive technology, which gets the
+       * names once.
+       */
 
-      .guide-pages {
+      .split {
         display: grid;
-        gap: 1rem;
+        gap: 2.5rem;
       }
 
-      @media (min-width: 40rem) {
-        .guide-pages {
-          grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+      @media (min-width: 52rem) {
+        .split {
+          grid-template-columns: 1fr 15rem;
+          gap: 4rem;
+          align-items: center;
         }
       }
 
-      .guide-page {
-        height: 100%;
-        text-decoration: none;
+      .reel {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 17rem;
+        overflow: hidden;
+        mask-image: linear-gradient(transparent, black 18%, black 82%, transparent);
       }
 
-      /* Only the cards that are links react to a pointer. The ingredients are
-         prose in a box and stay still. */
-      .guide-page:hover {
-        border-color: var(--color-primary);
-        box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--color-text) 10%, transparent);
+      .reel-column {
+        display: grid;
+        flex: none;
+        gap: 0.5rem;
+        padding-bottom: 0.5rem;
       }
 
-      .guide-page:hover .card-title {
-        text-decoration: underline;
-        text-decoration-thickness: 2px;
-        text-underline-offset: 0.2em;
+      .reel-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.6rem 0.8rem;
+        background-color: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+        white-space: nowrap;
       }
 
-      /* Footer --------------------------------------------------------------- */
+      .footnote {
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+
+
+      /* Footer ---------------------------------------------------------------
+       *
+       * Three blocks and a line: who this is, what there is to read, and where
+       * the project lives. The reading column is generated from the Mirror's
+       * frontmatter, so a page added upstream arrives here on its own — the same
+       * guarantee the section that used to sit above the footer had, at a
+       * fraction of the room.
+       */
 
       .footer {
-        padding-block: 2.25rem;
+        padding-block: 2.75rem 2rem;
         border-top: 1px solid var(--color-border);
         font-size: 0.9375rem;
         color: var(--color-text-muted);
       }
 
       .footer-inner {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem 2rem;
+        display: grid;
+        gap: 2.25rem;
+      }
+
+      @media (min-width: 46rem) {
+        .footer-inner {
+          grid-template-columns: 1fr auto auto;
+          gap: 3.5rem;
+        }
       }
 
       .footer-brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
+        max-width: 22rem;
       }
 
-      .footer-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
+      .footer-tagline {
+        margin-top: 0.6rem;
+      }
+
+      .footer-column {
+        display: grid;
+        gap: 0.45rem;
+        align-content: start;
+      }
+
+      .footer-heading {
+        margin-bottom: 0.2rem;
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-text);
+      }
+
+      .footer-note {
+        margin-top: 2.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--color-border);
+        font-size: 0.875rem;
+      }
+
+      /* Gold, and the same two beats as the badge: the page has one pulse. */
+      .heart {
+        display: inline-block;
+        color: var(--color-accent);
       }
 
       /* Motion --------------------------------------------------------------
@@ -1250,9 +1376,14 @@ const canonical = new URL('/', Astro.site);
           animation: sweep 7s 2.4s linear infinite;
         }
 
+        .reel-column {
+          animation: travel 26s linear infinite;
+        }
+
         /* Two beats and a rest, at rest-heart-rate. The one gold dot on the page
            is also the only thing on it that is alive. */
-        .badge-dot {
+        .badge-dot,
+        .heart {
           animation: beat 2.6s ease-in-out infinite;
         }
 
@@ -1428,6 +1559,12 @@ const canonical = new URL('/', Astro.site);
 
       /* Struck, then settling: a hard flash on contact, a moment of holding, and
          gone before the next front leaves the centre. */
+      @keyframes travel {
+        to {
+          transform: translateY(-100%);
+        }
+      }
+
       @keyframes blip {
         0%,
         4% {

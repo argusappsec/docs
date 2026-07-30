@@ -1,0 +1,32 @@
+---
+/**
+ * One provider's own mark, monochrome.
+ *
+ * The paths are transcribed in `src/landing/provider-marks.ts`, which records
+ * where they came from and on what licence. `currentColor` is the whole point of
+ * drawing them monochrome: the Token layer stays the only place a colour is
+ * chosen, the marks read in both themes, and a wall of vendor colours never
+ * competes with the page's own.
+ */
+import type { ProviderMark } from '../landing/provider-marks';
+
+interface Props {
+  readonly mark: ProviderMark;
+  readonly size?: number;
+}
+
+const { mark, size = 20 } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  width={size}
+  height={size}
+  fill="currentColor"
+  fill-rule="evenodd"
+  aria-hidden="true"
+  focusable="false"
+>
+  {mark.paths.map((path) => <path d={path}></path>)}
+</svg>
