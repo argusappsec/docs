@@ -3,12 +3,13 @@
  * Argus. Two sets, one protocol argument — a name here speaks a protocol, and
  * that is the whole of what it says.
  *
- * Transcribed once from `@lobehub/icons-static-svg` 1.94.0 (MIT), the same way
- * ADR 0004 transcribes the Palette: a value that changes effectively never is
- * cheaper to copy with its provenance written down than to depend on. Each is the
- * monochrome variant on a 24×24 viewBox, drawn in `currentColor` so the Token
- * layer stays the only place a colour is chosen, and filled `evenodd` because
- * several of the marks are cut out rather than drawn.
+ * Transcribed once — all but one from `@lobehub/icons-static-svg` 1.94.0 (MIT),
+ * and Regolo's from the artwork Regolo supplied — the same way ADR 0004
+ * transcribes the Palette: a value that changes effectively never is cheaper to
+ * copy with its provenance written down than to depend on. Each is the monochrome
+ * variant on a 24×24 viewBox, drawn in `currentColor` so the Token layer stays
+ * the only place a colour is chosen, and filled `evenodd` because several of the
+ * marks are cut out rather than drawn.
  *
  * The marks remain their owners' trademarks. Neither list is a supported list,
  * neither implies endorsement in either direction, and the page says so in the
@@ -18,12 +19,8 @@
 export interface VendorMark {
   readonly slug: string;
   readonly title: string;
-  /**
-   * One or more paths, on a 24×24 viewBox — or none, when there is no faithful
-   * monochrome glyph to transcribe. A name standing on its own is honest; a
-   * traced guess at somebody's trademark is not.
-   */
-  readonly paths?: readonly string[];
+  /** One or more paths, on a 24×24 viewBox. */
+  readonly paths: readonly string[];
 }
 
 /** Servers that speak the protocol Argus implements to reach a model. */
@@ -40,9 +37,14 @@ export const PROVIDER_MARKS: readonly VendorMark[] = [
   // Verified against the two things this list actually claims: `GET /v1/models`
   // on `api.regolo.ai` answers in the shape the probe reads, and their function
   // calling is the tool-call-plus-`tool_call_id` form Argus correlates by id.
-  // No mark: what they publish is a wordmark SVG and a raster icon, and neither
-  // reduces to a faithful 24×24 monochrome glyph.
-  { slug: 'regolo', title: 'Regolo' },
+  //
+  // Fitted from the icon Regolo supplied, whose own canvas is 1500 units: the
+  // union of its two paths measures 1187.50 × 1188.97 at (148.11, 146.03), so it
+  // is scaled into 23 units and centred, which is where the numbers below come
+  // from. Its second path is not a cut-out — in the original three squares carry
+  // the brand green and the fourth carries the ink colour, so monochrome loses
+  // the colour split and keeps the silhouette exactly.
+  { slug: 'regolo', title: 'Regolo', paths: ['M2.8 .53C3.19 .53 3.58 .53 3.98 .53C4.39 .53 4.8 .54 5.23 .54C5.84 .53 5.84 .53 6.47 .53C7.06 .53 7.06 .53 7.65 .53C8.01 .53 8.38 .53 8.75 .54C9.58 .58 9.58 .58 9.9 .9C9.93 1.57 9.94 2.24 9.93 2.91C9.93 3.31 9.93 3.72 9.93 4.14C9.93 4.57 9.92 5 9.92 5.43C9.92 5.87 9.92 6.3 9.92 6.73C9.91 7.8 9.91 8.86 9.9 9.93C7.99 10.03 6.07 10.14 4.1 10.25C4.2 11.42 4.31 12.59 4.42 13.8C5.03 13.82 5.64 13.84 6.25 13.86C6.76 13.87 6.76 13.87 7.28 13.89C8.95 13.73 10 12.81 11.23 11.74C11.44 11.56 11.66 11.38 11.88 11.19C13.1 9.94 13.57 8.87 13.6 7.13C13.62 6.62 13.62 6.62 13.63 6.1C13.64 5.75 13.64 5.39 13.65 5.03C13.66 4.33 13.68 3.62 13.7 2.92C13.71 2.61 13.71 2.3 13.72 1.98C13.77 1.22 13.77 1.22 14.09 .58C15.37 .57 16.65 .56 17.93 .56C18.37 .56 18.8 .56 19.24 .55C19.86 .55 20.49 .55 21.11 .55C21.68 .54 21.68 .54 22.25 .54C23.12 .58 23.12 .58 23.44 .9C23.47 1.57 23.48 2.24 23.47 2.91C23.47 3.51 23.47 3.51 23.47 4.14C23.47 4.57 23.46 5 23.46 5.43C23.46 5.87 23.46 6.3 23.46 6.73C23.45 7.8 23.45 8.86 23.44 9.93C22.62 10.34 22.03 10.29 21.11 10.31C20.77 10.31 20.43 10.32 20.08 10.33C19.37 10.34 18.66 10.35 17.95 10.36C15.97 10.41 14.67 10.5 13.12 11.86C12.91 12.05 12.69 12.23 12.46 12.42C12.28 12.6 12.1 12.78 11.92 12.97C11.64 13.24 11.64 13.24 11.36 13.51C10.37 14.73 10.14 15.96 10.1 17.5C10.09 17.83 10.08 18.15 10.07 18.49C10.06 18.83 10.05 19.17 10.04 19.52C10.02 20.2 10 20.87 9.98 21.55C9.97 21.85 9.96 22.15 9.96 22.45C9.9 23.15 9.9 23.15 9.58 23.47C8.91 23.5 8.24 23.5 7.57 23.5C7.21 23.5 6.84 23.5 6.46 23.5C5.76 23.49 5.76 23.49 5.04 23.49C2.82 23.48 2.82 23.48 .55 23.47C.55 20.38 .55 17.3 .55 14.12C1.19 13.91 1.83 13.69 2.49 13.47C2.49 12.41 2.49 11.35 2.49 10.25C1.85 10.14 1.21 10.04 .55 9.93C.54 8.65 .54 7.37 .53 6.09C.53 5.65 .53 5.22 .53 4.78C.52 4.16 .52 3.53 .52 2.91C.52 2.53 .52 2.15 .51 1.76C.58 .18 1.4 .54 2.8 .53ZM2.8 .53', 'M14.09 14.12C15.37 14.11 16.65 14.1 17.93 14.1C18.37 14.1 18.8 14.1 19.24 14.09C19.86 14.09 20.49 14.09 21.11 14.09C21.68 14.08 21.68 14.08 22.25 14.08C23.12 14.12 23.12 14.12 23.44 14.44C23.47 15.08 23.48 15.72 23.48 16.36C23.49 16.95 23.49 16.95 23.49 17.55C23.48 17.96 23.48 18.37 23.48 18.79C23.48 19.41 23.48 19.41 23.49 20.04C23.49 20.43 23.49 20.82 23.48 21.22C23.48 21.58 23.48 21.94 23.48 22.31C23.44 23.15 23.44 23.15 23.12 23.47C22.45 23.5 21.78 23.5 21.11 23.5C20.71 23.5 20.3 23.5 19.88 23.5C19.45 23.49 19.02 23.49 18.59 23.49C18.15 23.49 17.72 23.48 17.29 23.48C16.22 23.48 15.16 23.47 14.09 23.47C13.67 22.62 13.73 21.97 13.73 21.02C13.73 20.48 13.73 20.48 13.73 19.93C13.73 19.56 13.73 19.18 13.73 18.79C13.73 18.42 13.73 18.04 13.73 17.65C13.73 17.29 13.73 16.94 13.73 16.57C13.73 16.07 13.73 16.07 13.73 15.57C13.77 14.76 13.77 14.76 14.09 14.12ZM14.09 14.12'] },
 ];
 
 /** Tools that can consult Argus over MCP, which is the same argument the other
