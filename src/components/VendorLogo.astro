@@ -28,5 +28,5 @@ const { mark, size = 20 } = Astro.props;
   aria-hidden="true"
   focusable="false"
 >
-  {mark.paths.map((path) => <path d={path}></path>)}
+  {(mark.paths ?? []).map((path) => <path d={path}></path>)}
 </svg>

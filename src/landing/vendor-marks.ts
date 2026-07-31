@@ -18,8 +18,12 @@
 export interface VendorMark {
   readonly slug: string;
   readonly title: string;
-  /** One or more paths, on a 24×24 viewBox. */
-  readonly paths: readonly string[];
+  /**
+   * One or more paths, on a 24×24 viewBox — or none, when there is no faithful
+   * monochrome glyph to transcribe. A name standing on its own is honest; a
+   * traced guess at somebody's trademark is not.
+   */
+  readonly paths?: readonly string[];
 }
 
 /** Servers that speak the protocol Argus implements to reach a model. */
@@ -33,6 +37,12 @@ export const PROVIDER_MARKS: readonly VendorMark[] = [
   { slug: 'mistral', title: 'Mistral', paths: ['M3.428 3.4h3.429v3.428h3.429v3.429h-.002 3.431V6.828h3.427V3.4h3.43v13.714H24v3.429H13.714v-3.428h-3.428v-3.429h-3.43v3.428h3.43v3.429H0v-3.429h3.428V3.4zm10.286 13.715h3.428v-3.429h-3.427v3.429z'] },
   { slug: 'groq', title: 'Groq', paths: ['M12.036 2c-3.853-.035-7 3-7.036 6.781-.035 3.782 3.055 6.872 6.908 6.907h2.42v-2.566h-2.292c-2.407.028-4.38-1.866-4.408-4.23-.029-2.362 1.901-4.298 4.308-4.326h.1c2.407 0 4.358 1.915 4.365 4.278v6.305c0 2.342-1.944 4.25-4.323 4.279a4.375 4.375 0 01-3.033-1.252l-1.851 1.818A7 7 0 0012.029 22h.092c3.803-.056 6.858-3.083 6.879-6.816v-6.5C18.907 4.963 15.817 2 12.036 2z'] },
   { slug: 'openrouter', title: 'OpenRouter', paths: ['M18.654 3.87a5.087 5.087 0 110 10.174L23.7 19.09c.64.641.187 1.737-.72 1.737H8.48a8.479 8.479 0 010-16.958h10.175zM8.479 7.26a5.087 5.087 0 100 10.176 5.087 5.087 0 000-10.175z'] },
+  // Verified against the two things this list actually claims: `GET /v1/models`
+  // on `api.regolo.ai` answers in the shape the probe reads, and their function
+  // calling is the tool-call-plus-`tool_call_id` form Argus correlates by id.
+  // No mark: what they publish is a wordmark SVG and a raster icon, and neither
+  // reduces to a faithful 24×24 monochrome glyph.
+  { slug: 'regolo', title: 'Regolo' },
 ];
 
 /** Tools that can consult Argus over MCP, which is the same argument the other
