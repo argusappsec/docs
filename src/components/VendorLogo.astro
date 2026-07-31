@@ -1,17 +1,17 @@
 ---
 /**
- * One provider's own mark, monochrome.
+ * Somebody else's own mark, monochrome.
  *
- * The paths are transcribed in `src/landing/provider-marks.ts`, which records
+ * The paths are transcribed in `src/landing/vendor-marks.ts`, which records
  * where they came from and on what licence. `currentColor` is the whole point of
  * drawing them monochrome: the Token layer stays the only place a colour is
  * chosen, the marks read in both themes, and a wall of vendor colours never
  * competes with the page's own.
  */
-import type { ProviderMark } from '../landing/provider-marks';
+import type { VendorMark } from '../landing/vendor-marks';
 
 interface Props {
-  readonly mark: ProviderMark;
+  readonly mark: VendorMark;
   readonly size?: number;
 }
 

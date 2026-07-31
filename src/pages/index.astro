@@ -30,9 +30,9 @@ import { getCollection } from 'astro:content';
 
 import Mark from '../assets/brand/argus.svg';
 import GitHubMark from '../components/GitHubMark.astro';
-import ProviderLogo from '../components/ProviderLogo.astro';
+import VendorLogo from '../components/VendorLogo.astro';
 import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
-import { PROVIDER_MARKS } from '../landing/provider-marks';
+import { CLIENT_MARKS, PROVIDER_MARKS } from '../landing/vendor-marks';
 import '../styles/global.css';
 
 const { overview, pages } = guideHandoff(await getCollection('docs'));
@@ -208,27 +208,30 @@ const BEATS: readonly Beat[] = [
 
 
 /**
- * The one hard number, in the three figures a stranger can read without being
- * told what recall is. `0` rather than a second `100%`: precision of 100% means
- * nothing was reported that was not there, and a zero says that in one glyph.
+ * What the page says about its own boundaries, which for a tool that reads a
+ * stranger's pull request is the section a security reader actually opens.
  *
- * ADR 0004 keeps gold out of small type, so the figures are `primary` on `bg`.
+ * All three are transcribed from the Guide's own security posture and go no
+ * further: each is a promise the code has to keep, so none of them is a sentence
+ * this page is free to improve on.
  */
-const SCORE = [
-  { figure: '100%', label: 'flaws found' },
-  { figure: '0', label: 'false alarms' },
-  { figure: 'VAmPI', label: 'vulnerable by design' },
+const GUARDS = [
+  {
+    title: 'A pull request cannot give orders.',
+    detail:
+      'The code under review is data. Nothing it contains directs the agent, and nothing it says is written back to what your organization knows.',
+  },
+  {
+    title: 'Scanners never leave the checkout.',
+    detail:
+      'Review tools read the tree they were pointed at, not the machine Argus runs on.',
+  },
+  {
+    title: 'What it knows stays where it runs.',
+    detail:
+      'Your identity, memory and context documents never leave your instance, and anything Argus posts in public has to be grounded in the tree it just read.',
+  },
 ];
-
-/**
- * The other half of "bring your own": the model is yours, and so is the tool you
- * ask from. Argus speaks MCP, so an assistant you already have can consult it.
- *
- * Named as examples and nothing more, for the same reason the provider marks are:
- * a client list is somebody else's roadmap, and Argus implements the protocol
- * rather than certifying anybody's client.
- */
-const CLIENTS = ['Claude Code', 'Codex', 'Cursor', 'OpenCode'];
 
 /** Stamped at build time, so the footer never claims a year that has passed. */
 const YEAR = new Date().getFullYear();
@@ -284,7 +287,7 @@ const canonical = new URL('/', Astro.site);
 
         <nav class="nav" aria-label="Sections of this page">
           <a href="#reviews">How it works</a>
-          <a href="#verified">Measured</a>
+          <a href="#trust">Trust</a>
           <a href="#your-ai">Your AI</a>
         </nav>
 
@@ -470,33 +473,43 @@ const canonical = new URL('/', Astro.site);
       }
 
       {
-        /* The reader has just watched a review happen, so this is the moment the
-           question "does it actually find things" is asked — and the answer is
-           the one number the project can put a measurement behind. Which is why
-           the figures sit here and not above the story: proof lands after the
-           claim it is proof of, and three tiles under the hero were three tiles
-           about nothing yet. */
+        /*
+         * The reader has just watched Argus read a pull request, which is the
+         * moment the question changes: not "does it find things" but "what else
+         * does it do while it is in there". For anything that reads a stranger's
+         * branch and then writes in public, that is the question that decides
+         * whether the rest of the page matters.
+         *
+         * A benchmark used to stand here. It was one deliberately broken app and
+         * one class of flaw, which is a fine thing to have measured and a poor
+         * thing to headline: a figure a reader cannot check is an invitation to
+         * argue with the figure. These three are checkable — every one of them is
+         * a promise in the code, on the page it is documented on.
+         */
       }
-      <section class="section section-raised" id="verified" aria-labelledby="verified-heading">
+      <section class="section section-raised" id="trust" aria-labelledby="trust-heading">
         <div class="shell">
-          <p class="eyebrow reveal">Measured</p>
-          <h2 class="heading reveal" id="verified-heading">Does it actually find the flaws?</h2>
+          <p class="eyebrow reveal">Trust</p>
+          <h2 class="heading reveal" id="trust-heading">It reads your branch. Here is the rest.</h2>
 
-          <ul class="score">
+          <ul class="guards">
             {
-              SCORE.map(({ figure, label }) => (
-                <li class="tile reveal">
-                  <p class="tile-figure">{figure}</p>
-                  <p class="tile-label">{label}</p>
+              GUARDS.map(({ title, detail }) => (
+                <li class="guard reveal">
+                  <h3 class="guard-title">{title}</h3>
+                  <p class="guard-body">{detail}</p>
                 </li>
               ))
             }
           </ul>
 
-          <p class="prose reveal">
-            VAmPI is an API written on purpose to be full of holes. Argus found every
-            broken-authorization flaw in it, and reported nothing that was not there.
-          </p>
+          <div class="prose reveal guards-note">
+            <p>
+              Apache 2.0, and it runs on your own infrastructure. Which is the only claim on this
+              page that matters: read it, run it on a repository you own, and judge it there.
+            </p>
+            <p><a href="/guide/channels/github/">What a review is allowed to do</a></p>
+          </div>
         </div>
       </section>
 
@@ -516,7 +529,14 @@ const canonical = new URL('/', Astro.site);
           </div>
 
           <ul class="pills reveal">
-            {CLIENTS.map((client) => <li class="pill">{client}</li>)}
+            {
+              CLIENT_MARKS.map((mark) => (
+                <li class="pill">
+                  <VendorLogo mark={mark} size={16} />
+                  {mark.title}
+                </li>
+              ))
+            }
             <li class="pill pill-open">anything that speaks MCP</li>
           </ul>
 
@@ -555,7 +575,7 @@ const canonical = new URL('/', Astro.site);
               {
                 PROVIDER_MARKS.map((mark) => (
                   <li class="reel-item">
-                    <ProviderLogo mark={mark} />
+                    <VendorLogo mark={mark} />
                     {mark.title}
                   </li>
                 ))
@@ -565,7 +585,7 @@ const canonical = new URL('/', Astro.site);
               {
                 PROVIDER_MARKS.map((mark) => (
                   <li class="reel-item">
-                    <ProviderLogo mark={mark} />
+                    <VendorLogo mark={mark} />
                     {mark.title}
                   </li>
                 ))
@@ -723,8 +743,7 @@ const canonical = new URL('/', Astro.site);
 
       .eyebrow,
       .nav a,
-      .badge,
-      .tile-label {
+      .badge {
         font-family: var(--font-mono);
       }
 
@@ -733,7 +752,7 @@ const canonical = new URL('/', Astro.site);
        * stand on `surface`, where verdigris measures 4.31 and fails AA for type
        * this small. `text-muted` reads 5.51 on `bg` and 5.67 on `surface`, so one
        * rule is safe wherever a section puts it. The colour goes where the ground
-       * is always `bg`: the headline's second clause, the figures, the links.
+       * is always `bg`: the headline's second clause and the links.
        */
       .eyebrow {
         font-size: 0.75rem;
@@ -1389,51 +1408,6 @@ const canonical = new URL('/', Astro.site);
         text-transform: uppercase;
       }
 
-      /* The score -----------------------------------------------------------
-       *
-       * The band directly under the hero, so it is the width of the page rather
-       * than the width of a paragraph: one number, three ways of stating it, and
-       * the sentence that says on what.
-       *
-       * The tiles stand on `bg` — which is what the figures being `primary`
-       * depends on. On the raised band that pair measures 4.31 and fails, so the
-       * tile brings its own ground rather than inheriting the section's.
-       */
-
-      /* Three across wherever three fit, and two-then-one where they do not:
-         at 390px the third tile costs 2px more than the page has, and a phone
-         scrolling sideways is worse than a tile on its own line. */
-      .score {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1.75rem;
-      }
-
-      .tile {
-        padding: 1.1rem 1.25rem;
-        background-color: var(--color-bg);
-        border: 1px solid var(--color-border);
-        border-radius: 0.75rem;
-      }
-
-      .tile-figure {
-        font-size: clamp(1.6rem, 4.5vw, 2.6rem);
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-        color: var(--color-primary);
-      }
-
-      .tile-label {
-        margin-top: 0.15rem;
-        font-size: 0.6875rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--color-text-muted);
-      }
-
       /*
        * Gold as a rule rather than as type: on paper it is unreadable as a
        * foreground at 1.76, and a 2px band is the shape ADR 0004 gives it there.
@@ -1530,6 +1504,50 @@ const canonical = new URL('/', Astro.site);
         color: var(--color-text-muted);
       }
 
+      /* Trust ---------------------------------------------------------------
+       *
+       * On the raised band the boxes are `bg`: the same two neutrals as
+       * everywhere else, swapped, so a box stays visible against the band
+       * without inventing a third grey. Titles are `text` and bodies are
+       * `text-muted` — a promise is not a place for a colour.
+       */
+
+      .guards {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 52rem) {
+        .guards {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .guard {
+        padding: 1.35rem;
+        background-color: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0.9rem;
+      }
+
+      .guard-title {
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.35;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+
+      .guard-body {
+        margin-top: 0.5rem;
+        font-size: 0.9375rem;
+        color: var(--color-text-muted);
+      }
+
+      .guards-note {
+        margin-top: 2rem;
+      }
+
       /* Your tools ----------------------------------------------------------
        *
        * Names rather than marks, and the last one is not a name at all: the
@@ -1546,6 +1564,9 @@ const canonical = new URL('/', Astro.site);
       }
 
       .pill {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         padding: 0.45rem 0.8rem;
         background-color: var(--color-surface);
         border: 1px solid var(--color-border);
