@@ -114,6 +114,9 @@ const ANCHOR = CODE.filter((line) => line.flagged);
 interface Message {
   readonly from: 'argus' | 'you';
   readonly says: string;
+  /** Who it signs as, when that is not the channel's default: on GitHub Argus
+   *  posts as the App installation, and over MCP it is simply Argus. */
+  readonly as?: string;
   readonly tag?: { readonly text: string; readonly level: 'medium' | 'high' };
   readonly state?: 'now' | 'past';
   readonly typing?: boolean;
@@ -219,6 +222,27 @@ const BEATS: readonly Beat[] = [
  * further: each is a promise the code has to keep, so none of them is a sentence
  * this page is free to improve on.
  */
+/**
+ * The other side of the same protocol: not Argus asking a model, but a tool
+ * asking Argus. Which is why the reader is watching their own assistant here —
+ * you talk to the thing already open on your machine, and Argus answers through
+ * it out of what your organization knows.
+ *
+ * A different question from the story's on purpose. The Guide's MCP channel says
+ * an external AI delegates *a question or a review*, and the review half has had
+ * three sections already; this is the question half. Both facts in the answer are
+ * things Argus is documented to hold: where your secrets live is a SOUL field,
+ * and what a payload carries is a context document.
+ */
+const CONSULT: readonly Message[] = [
+  { from: 'you', says: 'ask argus if we can log the raw webhook body' },
+  {
+    from: 'argus',
+    as: 'argus',
+    says: 'Not that one. You told me it carries card numbers, and your secrets live in Vault rather than in logs. Log the event id and reference it.',
+  },
+];
+
 const GUARDS = [
   {
     title: 'A pull request cannot give orders.',
@@ -440,10 +464,10 @@ const canonical = new URL('/', Astro.site);
                             <span class="message-mark" aria-hidden="true">
                               <Mark width="14" />
                             </span>
-                            argus[bot]
+                            {message.as ?? 'argus[bot]'}
                           </>
                         ) : (
-                          'you'
+                          (message.as ?? 'you')
                         )}
                         {message.tag && (
                           <span
@@ -518,39 +542,84 @@ const canonical = new URL('/', Astro.site);
         </div>
       </section>
 
-      <section class="section" id="your-tools" aria-labelledby="your-tools-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Your tools</p>
-          <h2 class="heading reveal" id="your-tools-heading">
-            Ask it from the AI you already use.
-          </h2>
+      {
+        /* Two columns, panel on the left, which is the shape the middle beat has
+           — so this alternates against the section under it instead of making a
+           third "copy left, thing right" in a row. */
+      }
+      <section
+        class="section story story-flip"
+        id="your-tools"
+        aria-labelledby="your-tools-heading"
+      >
+        <div class="shell story-inner">
+          <div class="story-copy">
+            <p class="eyebrow reveal">Your tools</p>
+            <h2 class="heading reveal" id="your-tools-heading">
+              Ask it from the AI you already use.
+            </h2>
 
-          <div class="prose reveal">
-            <p>
-              Argus speaks MCP, so the assistant already open on your machine can consult it. It
-              hands over the question, Argus runs its own review with its own scanners, and answers.
-            </p>
-            <p class="claim">Your organization's knowledge never leaves Argus.</p>
+            <div class="prose reveal">
+              <p>
+                Argus speaks MCP, so the assistant already open on your machine can consult it. It
+                hands over the question, Argus answers out of what your organization knows, and the
+                answer arrives where you were working.
+              </p>
+              <p class="claim">Your organization's knowledge never leaves Argus.</p>
+            </div>
+
+            <ul class="pills reveal">
+              {
+                CLIENT_MARKS.map((mark) => (
+                  <li class="pill">
+                    <VendorLogo mark={mark} size={16} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+              <li class="pill pill-open">anything that speaks MCP</li>
+            </ul>
+
+            <div class="prose reveal pills-note">
+              <p class="footnote">
+                Examples of clients, not a supported list. The protocol is the contract, and Argus
+                certifies nobody's client.
+              </p>
+              <p><a href="/guide/channels/mcp/">How the MCP channel works</a></p>
+            </div>
           </div>
 
-          <ul class="pills reveal">
-            {
-              CLIENT_MARKS.map((mark) => (
-                <li class="pill">
-                  <VendorLogo mark={mark} size={16} />
-                  {mark.title}
-                </li>
-              ))
-            }
-            <li class="pill pill-open">anything that speaks MCP</li>
-          </ul>
-
-          <div class="prose reveal pills-note">
-            <p class="footnote">
-              Examples of clients, not a supported list. The protocol is the contract, and Argus
-              certifies nobody's client.
+          {
+            /* The same panel the story uses, because it is the same kind of
+               evidence — only the surface changed, from a pull request to
+               whatever editor the reader already has open. */
+          }
+          <div class="panel reveal">
+            <p class="panel-head">
+              <span class="panel-mark" aria-hidden="true">
+                <VendorLogo mark={CLIENT_MARKS[0]!} size={13} />
+              </span>
+              <span class="panel-repo">{CLIENT_MARKS[0]!.title}</span>
+              <span class="chip chip-sm panel-protocol">mcp</span>
             </p>
-            <p><a href="/guide/channels/mcp/">How the MCP channel works</a></p>
+
+            <ol class="thread">
+              {
+                CONSULT.map((message, index) => (
+                  <li class="message message-now" style={`--at: ${26 + index * 12}%`}>
+                    <p class="message-who">
+                      {message.from === 'argus' && (
+                        <span class="message-mark" aria-hidden="true">
+                          <Mark width="14" />
+                        </span>
+                      )}
+                      {message.as ?? 'you'}
+                    </p>
+                    <p class="message-says">{message.says}</p>
+                  </li>
+                ))
+              }
+            </ol>
           </div>
         </div>
       </section>
@@ -1199,6 +1268,10 @@ const canonical = new URL('/', Astro.site);
        *
        * On a narrow screen the copy always comes first and the panel follows,
        * whichever side the beat sits on when there is room for two.
+       *
+       * These three rules are the page's two-column recipe rather than the
+       * story's alone: the tools section borrows them, because it is the same
+       * arrangement of the same two things.
        */
 
       .story-inner {
@@ -1260,6 +1333,20 @@ const canonical = new URL('/', Astro.site);
       .panel-repo {
         color: var(--color-text);
         font-weight: 600;
+      }
+
+      /* The client's own mark, at the size the head's type is, so the panel says
+         whose window this is the way a window would. */
+      .panel-mark {
+        display: inline-flex;
+        align-items: center;
+        flex: none;
+      }
+
+      /* Gold, and the far end of the head: the protocol is what the panel is
+         about, the way the file path is what the review panel is about. */
+      .panel-protocol {
+        margin-left: auto;
       }
 
       /* The file sits at the far end, and is the first thing to go when the
@@ -1565,7 +1652,7 @@ const canonical = new URL('/', Astro.site);
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
-        margin-top: 2rem;
+        margin-top: 1.75rem;
       }
 
       .pill {
