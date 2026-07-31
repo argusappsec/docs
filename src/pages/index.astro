@@ -173,8 +173,8 @@ const BEATS: readonly Beat[] = [
     id: 'reviews',
     eyebrow: 'The review',
     title: 'It reviews your code.',
-    lede: 'Open a pull request and Argus reviews it. Real scanners run as tools, it reads what they found, and it reports what matters in your tree.',
-    claim: 'The model never gets a shell.',
+    lede: 'Open a pull request and Argus reviews it. No CI to wire up, no job to add. Real scanners run as tools, and it works through what they found.',
+    claim: 'It reads the whole tree, not just the diff.',
     link: { href: '/guide/channels/github/', label: 'How reviews on GitHub work' },
     code: CODE,
     messages: [{ ...FINDING, state: 'now' }],
@@ -197,7 +197,6 @@ const BEATS: readonly Beat[] = [
     title: 'Argue with it.',
     lede: 'A report is a list. This one answers, moves its own finding when you give it a reason, and says so when you are wrong.',
     claim: 'A colleague, not a toolbox.',
-    link: { href: '/guide/channels/mcp/', label: 'Consult it from your own tools' },
     code: ANCHOR,
     messages: [
       { ...CORRECTION, state: 'past' },
@@ -208,12 +207,28 @@ const BEATS: readonly Beat[] = [
 ];
 
 
-/** ADR 0004 keeps gold out of small type, so the figures are `primary` on `bg`. */
+/**
+ * The one hard number, in the three figures a stranger can read without being
+ * told what recall is. `0` rather than a second `100%`: precision of 100% means
+ * nothing was reported that was not there, and a zero says that in one glyph.
+ *
+ * ADR 0004 keeps gold out of small type, so the figures are `primary` on `bg`.
+ */
 const SCORE = [
-  { figure: '100%', label: 'recall' },
-  { figure: '100%', label: 'precision' },
-  { figure: 'VAmPI', label: 'benchmark' },
+  { figure: '100%', label: 'flaws found' },
+  { figure: '0', label: 'false alarms' },
+  { figure: 'VAmPI', label: 'vulnerable by design' },
 ];
+
+/**
+ * The other half of "bring your own": the model is yours, and so is the tool you
+ * ask from. Argus speaks MCP, so an assistant you already have can consult it.
+ *
+ * Named as examples and nothing more, for the same reason the provider marks are:
+ * a client list is somebody else's roadmap, and Argus implements the protocol
+ * rather than certifying anybody's client.
+ */
+const CLIENTS = ['Claude Code', 'Codex', 'Cursor', 'OpenCode'];
 
 /** Stamped at build time, so the footer never claims a year that has passed. */
 const YEAR = new Date().getFullYear();
@@ -268,8 +283,8 @@ const canonical = new URL('/', Astro.site);
         </a>
 
         <nav class="nav" aria-label="Sections of this page">
-          <a href="#verified">Verified</a>
           <a href="#reviews">How it works</a>
+          <a href="#verified">Measured</a>
           <a href="#your-ai">Your AI</a>
         </nav>
 
@@ -341,30 +356,6 @@ const canonical = new URL('/', Astro.site);
               }
             </ol>
           </div>
-        </div>
-      </section>
-
-      {
-        /* The one hard number, right where the hero leaves off: a claim this
-           early has to be checkable, so the sentence under it says on what. */
-      }
-      <section class="section section-raised" id="verified" aria-label="Measured on VAmPI">
-        <div class="shell">
-          <ul class="score">
-            {
-              SCORE.map(({ figure, label }) => (
-                <li class="tile reveal">
-                  <p class="tile-figure">{figure}</p>
-                  <p class="tile-label">{label}</p>
-                </li>
-              ))
-            }
-          </ul>
-
-          <p class="prose reveal">
-            Measured on VAmPI, a deliberately vulnerable API. Argus found every
-            broken-authorization flaw in it and reported nothing that was not there.
-          </p>
         </div>
       </section>
 
@@ -478,6 +469,66 @@ const canonical = new URL('/', Astro.site);
         })
       }
 
+      {
+        /* The reader has just watched a review happen, so this is the moment the
+           question "does it actually find things" is asked — and the answer is
+           the one number the project can put a measurement behind. Which is why
+           the figures sit here and not above the story: proof lands after the
+           claim it is proof of, and three tiles under the hero were three tiles
+           about nothing yet. */
+      }
+      <section class="section section-raised" id="verified" aria-labelledby="verified-heading">
+        <div class="shell">
+          <p class="eyebrow reveal">Measured</p>
+          <h2 class="heading reveal" id="verified-heading">Does it actually find the flaws?</h2>
+
+          <ul class="score">
+            {
+              SCORE.map(({ figure, label }) => (
+                <li class="tile reveal">
+                  <p class="tile-figure">{figure}</p>
+                  <p class="tile-label">{label}</p>
+                </li>
+              ))
+            }
+          </ul>
+
+          <p class="prose reveal">
+            VAmPI is an API written on purpose to be full of holes. Argus found every
+            broken-authorization flaw in it, and reported nothing that was not there.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="your-tools" aria-labelledby="your-tools-heading">
+        <div class="shell">
+          <p class="eyebrow reveal">Your tools</p>
+          <h2 class="heading reveal" id="your-tools-heading">
+            Ask it from the AI you already use.
+          </h2>
+
+          <div class="prose reveal">
+            <p>
+              Argus speaks MCP, so the assistant already open on your machine can consult it. It
+              hands over the question, Argus runs its own review with its own scanners, and answers.
+            </p>
+            <p class="claim">Your organization's knowledge never leaves Argus.</p>
+          </div>
+
+          <ul class="pills reveal">
+            {CLIENTS.map((client) => <li class="pill">{client}</li>)}
+            <li class="pill pill-open">anything that speaks MCP</li>
+          </ul>
+
+          <div class="prose reveal pills-note">
+            <p class="footnote">
+              Examples of clients, not a supported list. The protocol is the contract, and Argus
+              certifies nobody's client.
+            </p>
+            <p><a href="/guide/channels/mcp/">How the MCP channel works</a></p>
+          </div>
+        </div>
+      </section>
 
       <section class="section section-raised" id="your-ai" aria-labelledby="your-ai-heading">
         <div class="shell split">
@@ -821,10 +872,14 @@ const canonical = new URL('/', Astro.site);
        * pattern never reads as a grid.
        */
 
+      /* The one section that closes with a rule rather than with a change of
+         ground: every other boundary on the page is a band swap, and the story's
+         first beat stands on the same `bg` the hero does. */
       .hero {
         position: relative;
         overflow: clip;
         padding-top: clamp(2.5rem, 6vw, 4.5rem);
+        border-bottom: 1px solid var(--color-border);
         text-align: center;
       }
 
@@ -1473,6 +1528,44 @@ const canonical = new URL('/', Astro.site);
       .footnote {
         font-size: 0.875rem;
         color: var(--color-text-muted);
+      }
+
+      /* Your tools ----------------------------------------------------------
+       *
+       * Names rather than marks, and the last one is not a name at all: the
+       * point of a protocol is that the list is open, so the row ends with the
+       * rule instead of with a product. Dashed, because a dashed border is how a
+       * set says "and the rest" without claiming to know what the rest is.
+       */
+
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 2rem;
+      }
+
+      .pill {
+        padding: 0.45rem 0.8rem;
+        background-color: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+        color: var(--color-text-muted);
+      }
+
+      .section-raised .pill {
+        background-color: var(--color-bg);
+      }
+
+      .pill-open {
+        background-color: transparent;
+        border-style: dashed;
+      }
+
+      .pills-note {
+        margin-top: 1.75rem;
       }
 
 
