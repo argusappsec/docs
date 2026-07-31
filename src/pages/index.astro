@@ -15,9 +15,10 @@
  * feather, which is where the myth put the hundred eyes of Argus: so the hero
  * sits inside faint concentric rings that dilate like an iris, and a ring leaves
  * the centre every few seconds the way an eye sweeps a room. And the page argues
- * by showing rather than telling: one conversation, replaying, in which Argus
- * turns a missing check into a real exploit path using something only this
- * organization knows. Everything else is quiet on purpose.
+ * by showing rather than telling: a conversation in the hero, and under it one
+ * pull request thread that grows across three sections as you scroll — Argus
+ * finds a shape, you tell it something no scanner can know, and the severity
+ * changes because of you. Everything else is quiet on purpose.
  *
  * The copy is short by instruction. Where a sentence could be two, it is one.
  *
@@ -70,55 +71,139 @@ const CONVERSATION = [
 ];
 
 /**
- * What a review does, in the order it does it. A sequence, so it is numbered;
- * the three parts of the Argument below are not a sequence, and are not.
+ * The middle of the page is one story, told in three beats, on the surface where
+ * it really happens: a pull request thread that grows as you scroll.
+ *
+ * A story rather than a feature list, because the Argument is a sequence — the
+ * scanner finds a shape, you supply what the scanner cannot know, and the
+ * severity changes because of you. Three cards saying "it learns from you" would
+ * assert that. This shows it.
+ *
+ * Every beat's panel carries the previous beat's last message, muted, so the
+ * thread reads as continuous even though each beat is a separate section.
+ *
+ * The thread is generic on purpose: no real repository, no real organization,
+ * nothing readable as a record of an actual review. The bot's name, the way you
+ * address it and the two severities are all things the Guide documents.
  */
-const STEPS = [
-  {
-    title: 'Runs the scanners',
-    detail: 'Real scanners, wrapped as structured tools. The model never gets a shell.',
-  },
-  {
-    title: 'Reads the findings',
-    detail: 'It works through them instead of forwarding a report nobody opens.',
-  },
-  {
-    title: 'Weighs your context',
-    detail: 'Your stack, your risk tolerance, the exceptions you already granted.',
-  },
-  {
-    title: 'Answers back',
-    detail: 'Ask why on the thread. The answer arrives where the review did.',
-  },
-];
+const THREAD = { repo: 'payments-api', pr: 128, file: 'internal/orders/handler.go' };
 
 /**
- * What Argus is worth, in the order it is worth it. The Argument still gets
- * made, in one line, as the heading above these: scanners go blind, models get
- * noisy, and the organization decides. These three are what that buys.
- *
- * The third stays deliberately short of naming channels. Which places Argus can
- * be reached from is an Inventory, and it changes; that a colleague answers
- * questions does not.
+ * The hunk the finding sits on. Short lines on purpose: a phone has to hold them
+ * without scrolling sideways.
  */
-const STRENGTHS = [
+const CODE = [
+  { at: 41, text: 'id := chi.URLParam(r, "id")' },
+  { at: 42, text: 'order, err := h.orders.ByID(ctx, id)', flagged: true },
+  { at: 43, text: 'if err != nil {' },
+  { at: 44, text: '  return err' },
+  { at: 45, text: '}' },
+  { at: 46, text: 'return writeJSON(w, order)' },
+];
+
+/** The one line the thread is attached to, which is what the later beats show:
+ *  a review comment on GitHub hangs off a line, and keeping it visible is what
+ *  makes three panels read as one pull request rather than three mockups. */
+const ANCHOR = CODE.filter((line) => line.flagged);
+
+/**
+ * A message in the thread. `state` is what the beat does with it: `now` is the
+ * one that has just arrived and `past` is the one carried over from the beat
+ * before, so a message is written once and each beat says how it is read.
+ */
+interface Message {
+  readonly from: 'argus' | 'you';
+  readonly says: string;
+  readonly tag?: { readonly text: string; readonly level: 'medium' | 'high' };
+  readonly state?: 'now' | 'past';
+  readonly typing?: boolean;
+}
+
+/** The three messages the story is made of, so the two beats that repeat one
+ *  never drift from the beat that first said it. */
+const FINDING: Message = {
+  from: 'argus',
+  tag: { text: 'medium', level: 'medium' },
+  says: 'Broken authorization. The handler returns any order by id, and nothing checks that the caller owns it.',
+};
+
+const CORRECTION: Message = {
+  from: 'you',
+  says: 'argus, our support agents all share one service account. Does that change this?',
+};
+
+const ANSWER: Message = {
+  from: 'argus',
+  tag: { text: 'high', level: 'high' },
+  says: 'Then it is worse than I said. One shared account means any agent can read any customer’s order. And I will remember who your agents are.',
+};
+
+interface Beat {
+  readonly id: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly lede: string;
+  readonly claim: string;
+  readonly link?: { readonly href: string; readonly label: string };
+  readonly code?: typeof CODE;
+  readonly messages: readonly Message[];
+  readonly remembers?: string;
+}
+
+/**
+ * Where in the panel's scroll progress each part of the thread takes its turn.
+ *
+ * Derived rather than written down: a beat showing six lines of code and a beat
+ * showing one both have to read as a single continuous arrival, and the only
+ * thing that differs is how much room the code took first. Percentages are of
+ * the `cover` range — see the stylesheet for why that range and not `entry`.
+ */
+function stagger(beat: Beat) {
+  const afterCode = 22 + (beat.code?.length ?? 0) * 4;
+
+  return {
+    line: (index: number) => 16 + index * 4,
+    message: (index: number) => afterCode + index * 10,
+    remembers: afterCode + beat.messages.length * 10 + 2,
+  };
+}
+
+const BEATS: readonly Beat[] = [
   {
-    label: 'Your model',
-    title: 'Bring your own AI.',
-    detail: 'Not ours, and not a vendor of our choosing.',
-    claim: 'A hosted API, or a model running on hardware you own.',
+    id: 'reviews',
+    eyebrow: 'The review',
+    title: 'It reviews your code.',
+    lede: 'Open a pull request and Argus reviews it. Real scanners run as tools, it reads what they found, and it reports what matters in your tree.',
+    claim: 'The model never gets a shell.',
+    link: { href: '/guide/channels/github/', label: 'How reviews on GitHub work' },
+    code: CODE,
+    messages: [{ ...FINDING, state: 'now' }],
   },
   {
-    label: 'Your context',
+    id: 'learns',
+    eyebrow: 'Your context',
     title: 'It learns from you.',
-    detail: 'Your stack, your risk tolerance, the exceptions you granted.',
-    claim: 'What you teach it rides along in every review.',
+    lede: 'Answer on the thread. The exception you already granted, the account four teams share, the reason this one endpoint is different.',
+    claim: 'Say it once. Every review after that starts from there.',
+    code: ANCHOR,
+    messages: [
+      { ...FINDING, state: 'past' },
+      { ...CORRECTION, state: 'now', typing: true },
+    ],
   },
   {
-    label: 'Your colleague',
-    title: 'Discuss it, do not read it.',
-    detail: 'A report is a list. This one answers.',
-    claim: 'Ask why, disagree, and get a straight answer from something that knows your domain.',
+    id: 'answers',
+    eyebrow: 'The argument',
+    title: 'Argue with it.',
+    lede: 'A report is a list. This one answers, moves its own finding when you give it a reason, and says so when you are wrong.',
+    claim: 'A colleague, not a toolbox.',
+    link: { href: '/guide/channels/mcp/', label: 'Consult it from your own tools' },
+    code: ANCHOR,
+    messages: [
+      { ...CORRECTION, state: 'past' },
+      { ...ANSWER, state: 'now' },
+    ],
+    remembers: 'support agents share one service account',
   },
 ];
 
@@ -183,9 +268,9 @@ const canonical = new URL('/', Astro.site);
         </a>
 
         <nav class="nav" aria-label="Sections of this page">
-          <a href="#how">How it works</a>
-          <a href="#why">Why Argus</a>
           <a href="#verified">Verified</a>
+          <a href="#reviews">How it works</a>
+          <a href="#your-ai">Your AI</a>
         </nav>
 
         <div class="topbar-end">
@@ -259,56 +344,12 @@ const canonical = new URL('/', Astro.site);
         </div>
       </section>
 
-      <section class="section" id="how" aria-labelledby="how-heading">
+      {
+        /* The one hard number, right where the hero leaves off: a claim this
+           early has to be checkable, so the sentence under it says on what. */
+      }
+      <section class="section section-raised" id="verified" aria-label="Measured on VAmPI">
         <div class="shell">
-          <p class="eyebrow reveal">How it works</p>
-          <h2 class="heading reveal" id="how-heading">A review, then a conversation.</h2>
-
-          <ol class="steps">
-            {
-              STEPS.map((step, index) => (
-                <li class="step reveal">
-                  <span class="step-number">{String(index + 1).padStart(2, '0')}</span>
-                  <h3 class="step-title">{step.title}</h3>
-                  <p class="step-body">{step.detail}</p>
-                </li>
-              ))
-            }
-          </ol>
-
-          <p class="prose reveal step-link">
-            <a href="/guide/channels/github/">How reviews on GitHub work</a>
-          </p>
-        </div>
-      </section>
-
-      <section class="section section-raised" id="why" aria-labelledby="why-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Why Argus</p>
-          <h2 class="heading reveal" id="why-heading">
-            Scanners go blind. Models get noisy. Your context decides.
-          </h2>
-
-          <ul class="strengths">
-            {
-              STRENGTHS.map(({ label, title, detail, claim }) => (
-                <li class="card strength">
-                  <p class="role">{label}</p>
-                  <h3 class="card-title">{title}</h3>
-                  <p class="card-body">{detail}</p>
-                  <p class="strength-claim">{claim}</p>
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-      </section>
-
-      <section class="section" id="verified" aria-labelledby="verified-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Verified</p>
-          <h2 class="heading reveal" id="verified-heading">One claim, and you can check it.</h2>
-
           <ul class="score">
             {
               SCORE.map(({ figure, label }) => (
@@ -327,6 +368,116 @@ const canonical = new URL('/', Astro.site);
         </div>
       </section>
 
+      {
+        /* Every other beat turns around and stands on the raised band, so the
+           page alternates without any beat having to know where it sits. */
+        BEATS.map((beat, beatIndex) => {
+          const at = stagger(beat);
+
+          return (
+          <section
+            class:list={[
+              'section',
+              'story',
+              beatIndex % 2 === 1 && ['story-flip', 'section-raised'],
+            ]}
+            id={beat.id}
+            aria-labelledby={`${beat.id}-heading`}
+          >
+            <div class="shell story-inner">
+              <div class="story-copy">
+                <p class="eyebrow reveal">{beat.eyebrow}</p>
+                <h2 class="heading reveal" id={`${beat.id}-heading`}>
+                  {beat.title}
+                </h2>
+
+                <div class="prose reveal">
+                  <p>{beat.lede}</p>
+                  <p class="claim">{beat.claim}</p>
+                  {beat.link && (
+                    <p>
+                      <a href={beat.link.href}>{beat.link.label}</a>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {
+                /* The panel is the argument's evidence, so it is read in order
+                   like everything else: the thread's messages are text, and the
+                   code above them is a `<pre>`-equivalent list of numbered
+                   lines. Nothing here is an image of a screenshot. */
+              }
+              <div class="panel reveal">
+                <p class="panel-head">
+                  <span class="panel-repo">{THREAD.repo}</span>
+                  <span class="panel-pr">#{THREAD.pr}</span>
+                  {beat.code && <span class="panel-file">{THREAD.file}</span>}
+                </p>
+
+                {beat.code && (
+                  <ol class="code">
+                    {beat.code.map((line, index) => (
+                      <li
+                        class:list={['code-line', line.flagged && 'flagged']}
+                        style={`--at: ${at.line(index)}%`}
+                      >
+                        <span class="code-at">{line.at}</span>
+                        <span class="code-text">{line.text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+
+                <ol class="thread">
+                  {beat.messages.map((message, index) => (
+                    <li
+                      class:list={['message', `message-${message.state}`]}
+                      style={`--at: ${at.message(index)}%`}
+                    >
+                      <p class="message-who">
+                        {message.from === 'argus' ? (
+                          <>
+                            <span class="message-mark" aria-hidden="true">
+                              <Mark width="14" />
+                            </span>
+                            argus[bot]
+                          </>
+                        ) : (
+                          'you'
+                        )}
+                        {message.tag && (
+                          <span
+                            class:list={[
+                              'level',
+                              message.tag.level === 'high' && 'chip chip-sm',
+                            ]}
+                          >
+                            {message.tag.text}
+                          </span>
+                        )}
+                      </p>
+                      <p class="message-says">
+                        {message.says}
+                        {message.typing && <span class="caret" aria-hidden="true"></span>}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+
+                {beat.remembers && (
+                  <p class="remembered" style={`--at: ${at.remembers}%`}>
+                    <span class="remembered-label">memory</span>
+                    {beat.remembers}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+          );
+        })
+      }
+
 
       <section class="section section-raised" id="your-ai" aria-labelledby="your-ai-heading">
         <div class="shell split">
@@ -336,16 +487,13 @@ const canonical = new URL('/', Astro.site);
 
             <div class="prose reveal">
               <p>
-                A provider type names a protocol, not a vendor. Anything that speaks one is a
-                candidate, whether it answers from a hosted API or from hardware you own.
+                Argus ships no model. Point it at whatever speaks the protocol: a hosted API, or
+                something running on hardware you own.
               </p>
-              <p class="claim">
-                Run the model on your own infrastructure and your code never leaves it.
-              </p>
+              <p class="claim">Run it on your own machines and your code never leaves them.</p>
               <p class="footnote">
                 Examples of servers that speak it, not a supported list. Argus implements the
-                protocol and certifies nobody's server, so the only list that counts is the one you
-                test.
+                protocol and certifies nobody's server.
               </p>
               <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
             </div>
@@ -525,19 +673,16 @@ const canonical = new URL('/', Astro.site);
       .eyebrow,
       .nav a,
       .badge,
-      .role,
-      .step-number,
       .tile-label {
         font-family: var(--font-mono);
       }
 
       /*
-       * Muted, not `primary`, and the reason is a measurement: two of the five
-       * sections stand on `surface`, where verdigris measures 4.31 and fails AA
-       * for type this small. `text-muted` reads 5.51 on `bg` and 5.67 on
-       * `surface`, so one rule is safe wherever a section puts it. The colour
-       * goes where the ground is always `bg`: the headline's second clause, the
-       * step numbers, the figures, the links.
+       * Muted, not `primary`, and the reason is a measurement: half the sections
+       * stand on `surface`, where verdigris measures 4.31 and fails AA for type
+       * this small. `text-muted` reads 5.51 on `bg` and 5.67 on `surface`, so one
+       * rule is safe wherever a section puts it. The colour goes where the ground
+       * is always `bg`: the headline's second clause, the figures, the links.
        */
       .eyebrow {
         font-size: 0.75rem;
@@ -965,168 +1110,264 @@ const canonical = new URL('/', Astro.site);
       }
 
 
-      /* How it works --------------------------------------------------------
+      /* The story -----------------------------------------------------------
        *
-       * Numbered because a review really does happen in this order. The three
-       * parts of the Argument below are not an order and carry no numbers.
+       * Three beats, alternating sides, and one thread running through all
+       * three. The copy states the claim; the panel beside it is the claim
+       * happening. Which is why the panel is never an image: it is text in
+       * reading order, so the argument survives a screen reader, a text-only
+       * browser and a reader who turns motion off.
+       *
+       * On a narrow screen the copy always comes first and the panel follows,
+       * whichever side the beat sits on when there is room for two.
        */
 
-      .steps {
+      .story-inner {
         display: grid;
-        gap: 1.75rem;
+        gap: 2rem;
       }
 
-      @media (min-width: 46rem) {
-        .steps {
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1.5rem;
+      @media (min-width: 58rem) {
+        .story-inner {
+          grid-template-columns: 0.95fr 1.05fr;
+          gap: 3.5rem;
+          align-items: center;
+        }
+
+        .story-flip .story-copy {
+          order: 2;
         }
       }
 
-      .step {
-        padding-top: 0.9rem;
-        border-top: 1px solid var(--color-border);
+      .story .heading {
+        margin-bottom: 1.5rem;
       }
 
-      /* `primary` at label size only holds on `bg`, which is where this section
-         stands. Move the steps onto a raised band and the colour has to go. */
-      .step-number {
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        color: var(--color-primary);
-      }
-
-      .step-title {
-        margin-top: 0.5rem;
-        font-size: 1rem;
-        font-weight: 600;
-      }
-
-      .step-body {
-        margin-top: 0.35rem;
-        font-size: 0.9375rem;
-        color: var(--color-text-muted);
-      }
-
-      .step-link {
-        margin-top: 2.25rem;
-      }
-
-      /* Cards ---------------------------------------------------------------
+      /* The panel -----------------------------------------------------------
        *
-       * On the raised band the cards are `bg`: the same two Tokens as
-       * everywhere else, swapped, so a card stays visible against the section
-       * it sits in without inventing a third neutral. Titles are `text` and
-       * bodies are `text-muted`, never `primary`.
+       * A window on the thread, in the same two neutrals as everything else:
+       * `surface` on the plain band, `bg` on the raised one. Nothing in here
+       * invents a third grey, and the cards inside take whichever of the two the
+       * panel did not.
        */
 
-      .card {
-        display: block;
-        padding: 1.35rem;
+      .panel {
+        padding: 0.9rem;
         background-color: var(--color-surface);
         border: 1px solid var(--color-border);
-        border-radius: 0.9rem;
-        transition:
-          border-color 0.25s ease,
-          box-shadow 0.25s ease;
+        border-radius: 1rem;
+        box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--color-bg) 45%, transparent);
       }
 
-      .section-raised .card {
+      /* Written out rather than routed through a local custom property: the
+         Landing's rule is that you can read the Token at the point of paint, and
+         a `var(--panel-ground)` would only tell you where to look next. */
+      .section-raised .panel {
         background-color: var(--color-bg);
       }
 
-      .card-title {
-        font-size: 1.0625rem;
-        font-weight: 600;
-        line-height: 1.3;
-        letter-spacing: -0.01em;
-        text-wrap: balance;
-      }
-
-      .card-body {
-        margin-top: 0.5rem;
-        font-size: 0.9375rem;
+      .panel-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.15rem 0.35rem 0.75rem;
+        border-bottom: 1px solid var(--color-border);
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
         color: var(--color-text-muted);
       }
 
-      .strengths {
-        display: grid;
-        gap: 1rem;
-      }
-
-      @media (min-width: 52rem) {
-        .strengths {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      .strength {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .strength .card-body {
-        padding-bottom: 0.9rem;
-      }
-
-      /* The line each card is really about, so it is the line that is not muted.
-         Gold as a rule again, never as type: on paper it cannot carry text.
-         `auto` above it lands the three rules on one line whatever the cards
-         above them do. */
-      .strength-claim {
-        margin-top: auto;
-        padding-top: 0.85rem;
-        border-top: 2px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
-        font-size: 0.9375rem;
+      .panel-repo {
+        color: var(--color-text);
         font-weight: 600;
       }
 
-      .role {
+      /* The file sits at the far end, and is the first thing to go when the
+         panel is narrow: the repository and the number are what locate you. */
+      .panel-file {
+        margin-left: auto;
+      }
+
+      .code {
+        display: grid;
+        gap: 0.1rem;
+        padding: 0.75rem 0 0.9rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        line-height: 1.75;
+      }
+
+      /* The gutter is reserved on every line and painted on one, so the flagged
+         line does not shift the code sideways by two pixels. Width and style
+         only: the line that has a colour is the line that names a Token. */
+      .code-line {
+        display: flex;
+        gap: 0.75rem;
+        padding-left: 0.35rem;
+        /* A line of code is one line: it never wraps, and the panel gives it
+           room rather than the page giving it a sideways scrollbar. */
+        white-space: pre;
+        border-left-width: 2px;
+        border-left-style: solid;
+        border-left-color: transparent;
+      }
+
+      .code-at {
+        flex: none;
+        width: 1.5rem;
+        text-align: right;
+        color: var(--color-text-muted);
+      }
+
+      /*
+       * The line the finding is about. Gold as a rule and as a wash, never as
+       * type — the same shape ADR 0004 gives it everywhere else on the page,
+       * because at this size on paper the colour cannot carry a letter.
+       */
+      .flagged {
+        border-left-color: var(--color-accent);
+        background-color: color-mix(in srgb, var(--color-accent) 9%, transparent);
+      }
+
+      /* The thread ----------------------------------------------------------
+       *
+       * The message that has just arrived is a card; the one carried over from
+       * the beat before is the same box with no fill and muted type, which reads
+       * as history without ever going under AA.
+       */
+
+      .thread {
+        display: grid;
+        gap: 0.6rem;
+        padding-top: 0.75rem;
+      }
+
+      .message {
+        padding: 0.7rem 0.85rem;
+        background-color: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 0.7rem;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+      }
+
+      /* Whichever of the two neutrals the panel did not take. */
+      .section-raised .message {
+        background-color: var(--color-surface);
+      }
+
+      .message-past {
+        background-color: transparent;
+        color: var(--color-text-muted);
+      }
+
+      .message-who {
         display: flex;
         align-items: center;
-        gap: 0.55rem;
-        margin-bottom: 0.85rem;
+        gap: 0.45rem;
+        margin-bottom: 0.4rem;
+        font-family: var(--font-mono);
         font-size: 0.6875rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
         color: var(--color-text-muted);
       }
 
-      .role::before {
-        content: '';
+      .message-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         flex: none;
-        width: 0.4rem;
-        height: 0.4rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 1px solid var(--color-border);
         border-radius: 50%;
-        background-color: var(--color-accent);
       }
 
+      /* Medium is a label; high is the gold chip. So the one thing that changes
+         because you spoke up is the one thing that changes colour. */
+      .level {
+        margin-left: auto;
+        padding: 0.05rem 0.45rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.35rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .level.chip {
+        margin-left: auto;
+      }
+
+      /* Still being typed, which is the one thing on this half of the page that
+         moves on its own clock rather than on the reader's scrolling. */
+      .caret {
+        display: inline-block;
+        width: 0.45rem;
+        height: 0.9rem;
+        margin-left: 0.15rem;
+        vertical-align: text-bottom;
+        background-color: var(--color-primary);
+      }
+
+      /* What stuck. The story's last line, and the only place the page names a
+         piece of the machinery: MEMORY is why "say it once" is a claim and not a
+         wish. */
+      .remembered {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.35rem 0.35rem 0.1rem;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        color: var(--color-text-muted);
+      }
+
+      .remembered-label {
+        padding: 0.05rem 0.45rem;
+        border-radius: 0.35rem;
+        background-color: color-mix(in srgb, var(--color-accent) 16%, transparent);
+        color: var(--color-text);
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
 
       /* The score -----------------------------------------------------------
        *
-       * Tiles on `bg`, which is what lets the figures be `primary`: on the dark
-       * `surface` that pair measures 4.31 and would fail.
+       * The band directly under the hero, so it is the width of the page rather
+       * than the width of a paragraph: one number, three ways of stating it, and
+       * the sentence that says on what.
+       *
+       * The tiles stand on `bg` — which is what the figures being `primary`
+       * depends on. On the raised band that pair measures 4.31 and fails, so the
+       * tile brings its own ground rather than inheriting the section's.
        */
 
+      /* Three across wherever three fit, and two-then-one where they do not:
+         at 390px the third tile costs 2px more than the page has, and a phone
+         scrolling sideways is worse than a tile on its own line. */
       .score {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
         gap: 0.75rem;
-        margin-bottom: 2rem;
-        max-width: 34rem;
+        margin-bottom: 1.75rem;
       }
 
       .tile {
-        padding: 1rem 1.1rem;
+        padding: 1.1rem 1.25rem;
+        background-color: var(--color-bg);
         border: 1px solid var(--color-border);
         border-radius: 0.75rem;
       }
 
       .tile-figure {
-        font-size: clamp(1.5rem, 4vw, 2.1rem);
+        font-size: clamp(1.6rem, 4.5vw, 2.6rem);
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.03em;
+        line-height: 1.1;
         color: var(--color-primary);
       }
 
@@ -1395,15 +1636,9 @@ const canonical = new URL('/', Astro.site);
             dilate 19s 2.2s ease-in-out infinite alternate;
         }
 
-        .card {
-          transition:
-            border-color 0.25s ease,
-            box-shadow 0.25s ease,
-            transform 0.25s ease;
-        }
-
-        .guide-page:hover {
-          transform: translateY(-2px);
+        /* One block, blinking, at about the rate a terminal does. */
+        .caret {
+          animation: blink 1.1s steps(2, jump-none) infinite;
         }
 
         /*
@@ -1429,6 +1664,37 @@ const canonical = new URL('/', Astro.site);
             animation-timeline: view();
             animation-range: entry 6% entry 55%;
           }
+
+          /*
+           * The story assembles as you scroll it: the code arrives line by line
+           * and then the message lands, which is the same order it happened in.
+           *
+           * All of it is driven by the panel's own timeline rather than each
+           * element's, and that is the whole trick. A line of code is 21px tall,
+           * so its own range would be 21px of scrolling — a snap, not an arrival.
+           * Keyed to the panel, every part of the thread reads one progress, and
+           * `--at` is where in it each one takes its turn.
+           *
+           * Over `cover` rather than `entry`: `entry` ends the moment the panel
+           * is fully on screen, which for a panel this size is about 300px of
+           * scrolling for the whole thread. `cover` spans the panel crossing the
+           * whole viewport, so the story assembles over roughly half a screen —
+           * about 500px, measured — which is a pace you can watch.
+           */
+          .panel {
+            view-timeline-name: --panel;
+          }
+
+          .code-line,
+          .message-now,
+          .remembered {
+            animation-name: land;
+            animation-duration: 1s;
+            animation-timing-function: linear;
+            animation-fill-mode: both;
+            animation-timeline: --panel;
+            animation-range: cover var(--at) cover calc(var(--at) + 14%);
+          }
         }
       }
 
@@ -1443,6 +1709,21 @@ const canonical = new URL('/', Astro.site);
         from {
           opacity: 0;
           transform: translateY(2.25rem) scale(0.985);
+        }
+      }
+
+      /* Arriving in a thread: from slightly below, and slightly small, the way a
+         message that was just posted looks the instant before it settles. */
+      @keyframes land {
+        from {
+          opacity: 0;
+          transform: translateY(0.6rem) scale(0.98);
+        }
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
         }
       }
 
