@@ -1,0 +1,19 @@
+# Argus, an application security agent. https://argusappsec.com
+#
+# This file is about vulnerabilities in Argus itself: the agent, its channels,
+# and the trust boundaries it claims. What a useful report contains, and how
+# quickly you hear back, is the policy linked below.
+#
+# Privacy questions about this website go to privacy@argusappsec.com instead,
+# and are answered at https://argusappsec.com/privacy/.
+#
+# `Expires` has to be renewed before it passes. It is not left to memory:
+# `src/security/security-txt.test.ts` turns the build red a month before, which
+# is the alarm for a file nobody would otherwise reread.
+
+Contact: mailto:security@argusappsec.com
+Contact: https://github.com/argusappsec/argus/security/advisories/new
+Expires: 2027-08-01T00:00:00.000Z
+Policy: https://github.com/argusappsec/argus/security/policy
+Preferred-Languages: en, it
+Canonical: https://argusappsec.com/.well-known/security.txt
