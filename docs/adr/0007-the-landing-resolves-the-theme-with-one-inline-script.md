@@ -63,6 +63,10 @@ choice made there carries back to `/`.
   than to this page, and on a page whose only job is handing off to the Guide, 2 kB
   that makes the next click instant is the cheapest thing on it. So the Landing
   declares one script and is served two; only the first is its own.
+- **It is served three, since ADR 0008.** Cloudflare Web Analytics injects its
+  beacon at the edge for a proxied zone, so the count above is out of date the
+  moment the site is deployed. The guard here cannot see that script and keeps
+  passing; ADR 0008 is where the served page is described.
 
 ## Alternatives considered
 
