@@ -264,6 +264,20 @@ const GUARDS = [
 /** Stamped at build time, so the footer never claims a year that has passed. */
 const YEAR = new Date().getFullYear();
 
+/**
+ * Who the notice names. Not a legal entity, and it does not need to be: a
+ * copyright notice declares authorship rather than creating it, and without a
+ * CLA every contributor keeps their own — so the collective form is the one that
+ * stays true after the first outside pull request. It is the form Go, Kubernetes
+ * and Chromium use for the same reason. The Apache appendix upstream should say
+ * this same line.
+ *
+ * Deliberately not the same string as the data controller a privacy notice has
+ * to name: that one must be a person or a company somebody can write to, and
+ * authors collectively are neither.
+ */
+const AUTHORS = 'The Argus Authors';
+
 const canonical = new URL('/', Astro.site);
 ---
 
@@ -700,7 +714,7 @@ const canonical = new URL('/', Astro.site);
       </div>
 
       <p class="shell footer-note">
-        © {YEAR} Davide Imola. Apache 2.0. Built with{' '}
+        © {YEAR} {AUTHORS}. Apache 2.0. Built with{' '}
         <span class="heart" aria-hidden="true">♥</span><span class="sr-only">love</span> and Go.
       </p>
     </footer>
