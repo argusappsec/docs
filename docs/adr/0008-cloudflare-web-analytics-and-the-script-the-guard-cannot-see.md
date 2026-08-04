@@ -82,9 +82,12 @@ was also protecting — that the Landing not be a Starlight page — is untouche
   measurement silently, which is the failure mode this repository keeps writing
   tests about.
 
-- **`privacy@argusappsec.com` has to exist.** The domain's MX records point at
-  iCloud Mail (ADR 0005), and the notice publishes that address as the one to
-  write to. A published contact that bounces is worse than no page.
+- **`privacy@argusappsec.com` exists**, added when this was written. The notice
+  publishes it as the address to write to, and the domain's MX records point at
+  iCloud Mail (ADR 0005), so a bounce here would take the page's one obligation
+  with it. Kept separate from `security@argusappsec.com` on purpose: a
+  vulnerability report and a subject access request should not queue behind each
+  other.
 
 - **Cloudflare offers "enable, excluding visitor data in the EU"**, which skips
   the beacon for European visitors and removes the GDPR question by removing the
