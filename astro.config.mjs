@@ -2,6 +2,7 @@ import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
+import { linkGuard } from './src/links/guard';
 import { contrastGuard } from './src/tokens/guard';
 
 export default defineConfig({
@@ -14,6 +15,12 @@ export default defineConfig({
     // ADR 0004's contrast table is what justifies the whole Token layer, so
     // the build re-measures it before rendering anything. See src/tokens/.
     contrastGuard(),
+
+    // The other half of `argus` ADR 0022's link rule, which that ADR states and
+    // leaves unenforced. It reads the rendered site, so it runs at the end of
+    // the build rather than the start; ADR 0010 records the trade. See
+    // src/links/.
+    linkGuard(),
 
     starlight({
       title: 'Argus',
