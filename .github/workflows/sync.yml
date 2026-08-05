@@ -1,0 +1,130 @@
+name: Sync
+
+# The Guide is authored in `argusappsec/argus` and only published here, so
+# something has to move it. ADR 0002 chose a pull on a schedule: `argus` is
+# public, so reading it needs no credential, and writing here uses the token
+# Actions already hands the job — there is no secret to create, rotate or leak.
+#
+# Every six hours, at 17 past rather than on the hour: GitHub queues scheduled
+# runs and says the top of the hour is the busiest. Whoever cannot wait six hours
+# runs it by hand, which is also the exit ADR 0002 records for the day the latency
+# starts to annoy us.
+#
+# No `push` trigger, deliberately. This workflow commits and pushes, so on a
+# feature branch it would rewrite that branch's Mirror, and on `main` it would run
+# for every commit that has nothing to do with the Guide.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+# `contents: write` commits the Mirror. `actions: write` starts the deploy, and
+# ADR 0011 is why one is needed: a push made with the built-in token triggers no
+# workflow, so the Sync has to start the workflow that publishes what it just
+# committed. Neither reaches another repository, and `actions: write` cannot write
+# code.
+permissions:
+  contents: write
+  actions: write
+
+# One Sync at a time — two of them race to push `main` and the loser fails on a
+# stale ref. Not cancelled, though: a run killed between `git commit` and
+# `git push` leaves its commit on a runner about to be deleted, and the Mirror
+# unpublished until some later run happens to find a difference.
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  # One job, on purpose: a second one without `needs:` would run beside these
+  # steps rather than after them, and could commit the Mirror as it was before.
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # This repository, keeping the credential checkout persists by default —
+      # it is what `git push` below uses.
+      - uses: actions/checkout@v5
+
+      # And the Guide, from the repository that authors it. Public, so no `token`
+      # is passed; `persist-credentials: false` keeps this repository's credential
+      # out of a tree that is only ever read.
+      - uses: actions/checkout@v5
+        with:
+          repository: argusappsec/argus
+          path: upstream
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          # The script is TypeScript run directly, so this has to be a Node that
+          # strips types without a flag. It is the same major the deploy pins, and
+          # `src/sync/sync.test.ts` holds the two together: one Node for the
+          # repository, moved in one place.
+          #
+          # No `cache: npm`, and no `npm ci` anywhere below: the Sync imports only
+          # `node:` builtins, so it lands the Mirror whatever state the site's
+          # dependency tree is in. The deploy's build is what judges the result.
+          node-version: '24'
+
+      # Everything about which files move is in the script, which is tested. See
+      # `src/sync/mirror.ts`.
+      - name: Replace the Mirror with the Guide
+        run: node src/sync/sync.ts upstream
+
+      - name: Commit the Mirror, and start the deploy that publishes it
+        run: |
+          # Every git command here names the Mirror, so even a script that wrote
+          # somewhere else could not get it committed. That is ADR 0002's sibling
+          # guarantee — a Translation is a directory beside the Mirror — restated
+          # where it costs one argument each time.
+          git add -A -- src/content/docs/guide
+
+          # Staged first, then compared: an untracked file is not a difference
+          # until it is in the index, so `git diff` alone would skip the commit on
+          # exactly the run that added a page.
+          if git diff --cached --quiet -- src/content/docs/guide; then
+            echo 'Nothing staged: the Mirror the script wrote is the Mirror already committed.'
+            exit 0
+          fi
+
+          # The upstream commit in the subject is the staleness signal ADR 0002 is
+          # built around: it says which state of the Guide the Mirror is a copy of,
+          # and the diff beneath it is the English that a Translation now trails.
+          #
+          # Scoped to the Mirror here too, and not only in the `git add` above: a
+          # commit without a pathspec takes whatever else the index holds, which is
+          # nothing on a runner and is somebody's work in progress when these same
+          # commands are run by hand.
+          git commit \
+            --message "docs: sync the Guide from argusappsec/argus@$(git -C upstream rev-parse --short HEAD)" \
+            -- src/content/docs/guide
+
+          # A push rejected because `main` moved while this ran fails the job, and
+          # is left failing: the Mirror in the repository is still the old one, so
+          # the next Sync finds the same difference and commits it again. A red run
+          # that heals itself in six hours, rather than a rebase this workflow would
+          # have to get right unattended.
+          git push
+
+          # A push made with the built-in token starts no workflow, so the deploy
+          # of ADR 0009 would never see this commit and the site would sit on the
+          # last Mirror a human happened to push. `workflow_dispatch` is the
+          # documented exception to that rule, and deploy.yml declares it. ADR
+          # 0011 records the trade, and the test asserts both halves.
+          gh workflow run deploy.yml --ref "$GITHUB_REF_NAME"
+        env:
+          # The commit's author, which a runner has none of. The bot's own address
+          # rather than a person's: nobody wrote this commit, and attributing it to
+          # whoever last touched the workflow would be a small lie in every diff a
+          # Translation is measured against.
+          GIT_AUTHOR_NAME: 'github-actions[bot]'
+          GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+          GIT_COMMITTER_NAME: 'github-actions[bot]'
+          GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+
+          # The built-in token, under the name the CLI reads. It is spelled
+          # `github.token` here rather than through the `secrets` context because
+          # the two are the same token and only one spelling reads like a secret
+          # this repository keeps — the test refuses the other one.
+          GH_TOKEN: ${{ github.token }}

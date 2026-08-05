@@ -7,6 +7,10 @@ dist/
 # Dependencies
 node_modules/
 
+# The Sync's checkout of argusappsec/argus, which lands inside the working tree
+# because that is where actions/checkout puts it
+upstream/
+
 # Environment
 .env*
 

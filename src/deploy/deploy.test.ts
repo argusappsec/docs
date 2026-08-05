@@ -2,8 +2,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
+
+import { readWorkflow, type Step } from '../workflows/workflow.ts';
 
 /**
  * The rules the deploy has to keep, read off the workflow that performs it.
@@ -23,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const WORKFLOW = '.github/workflows/deploy.yml';
 
-const SOURCE = readFileSync(join(REPO_ROOT, WORKFLOW), 'utf8');
+const DEPLOY = readWorkflow(WORKFLOW);
 const PACKAGE = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
 
 /** The one connection to Cloudflare, which happens to be spelled as two
@@ -38,7 +39,9 @@ describe('the deploy workflow', () => {
   it('deploys every branch, and never code from a fork', () => {
     // A preview URL per branch is what issue #6 is for, so the trigger is every
     // branch rather than a list somebody has to remember to extend.
-    expect(triggers()['push']?.branches, `no branch push trigger in ${WORKFLOW}`).toContain('**');
+    const push = DEPLOY.triggers()['push'] as { branches?: readonly string[] } | undefined;
+
+    expect(push?.branches, `no branch push trigger in ${WORKFLOW}`).toContain('**');
 
     // The whole `pull_request` family is refused, not just the obvious name.
     // `pull_request` withholds the secrets, so on a public repository it would
@@ -46,7 +49,7 @@ describe('the deploy workflow', () => {
     // `pull_request_target` is the worse half: it runs with the secrets
     // available to a fork's own code. ADR 0009 records the trade.
     expect(
-      Object.keys(triggers()).filter((event) => event.startsWith('pull_request')),
+      Object.keys(DEPLOY.triggers()).filter((event) => event.startsWith('pull_request')),
       'a fork must not reach the Cloudflare credentials — see ADR 0009',
     ).toEqual([]);
   });
@@ -56,7 +59,7 @@ describe('the deploy workflow', () => {
     // something within a single job. A second job without `needs:` runs in
     // parallel, so an upload moved there would still sit after the gates as this
     // file counts them — and would upload while the tests were failing.
-    expect(Object.keys(jobs()), 'more than one job — the ordering guard below stops meaning anything').toHaveLength(1);
+    expect(Object.keys(DEPLOY.jobs()), 'more than one job — the ordering guard below stops meaning anything').toHaveLength(1);
   });
 
   it('uploads nothing until the checks, the tests and the build have passed', () => {
@@ -65,7 +68,7 @@ describe('the deploy workflow', () => {
     // the upload, and a step that fails ends the job. Nothing about that is
     // visible in the deployment itself, so it is asserted here.
     for (const gate of [/npm ci\b/, /npm run check\b/, /npm test\b/, /npm run build\b/]) {
-      const at = steps().findIndex((step) => gate.test(step.run ?? ''));
+      const at = DEPLOY.steps().findIndex((step) => gate.test(step.run ?? ''));
 
       expect(at, `no step runs ${gate.source}`).toBeGreaterThan(-1);
       expect(at, `${gate.source} runs after the upload`).toBeLessThan(uploadAt());
@@ -109,7 +112,7 @@ describe('the deploy workflow', () => {
   });
 
   it('carries the hosting connection and no other secret', () => {
-    const referenced = [...SOURCE.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(([, name]) => name!);
+    const referenced = [...DEPLOY.source.matchAll(/secrets\.([A-Z0-9_]+)/g)].map(([, name]) => name!);
 
     expect(referenced, 'the workflow reads no secret at all — how does it authenticate?').not.toHaveLength(0);
     expect([...new Set(referenced)].sort()).toEqual(HOSTING_SECRETS);
@@ -119,17 +122,17 @@ describe('the deploy workflow', () => {
     // The job reads the checkout and nothing else. Left implicit, these follow a
     // repository-wide default that can be widened from a settings page this file
     // cannot see.
-    expect(workflow().permissions, 'no explicit permissions block').toEqual({ contents: 'read' });
+    expect(DEPLOY.document.permissions, 'no explicit permissions block').toEqual({ contents: 'read' });
 
     // A job's own block *replaces* the one above rather than narrowing it, so the
     // widening would be invisible from the top of the file.
-    for (const [name, job] of Object.entries(jobs())) {
+    for (const [name, job] of Object.entries(DEPLOY.jobs())) {
       expect(job.permissions, `job \`${name}\` sets its own permissions, which replace the workflow's`).toBeUndefined();
     }
   });
 
   it('lets a newer push win the branch it shares', () => {
-    const { concurrency } = workflow();
+    const { concurrency } = DEPLOY.document;
 
     // Two runs on one branch race to upload, and the loser is whichever finished
     // first — so the older commit can end up being the one served. Nothing
@@ -170,46 +173,10 @@ describe('the deploy workflow', () => {
   });
 });
 
-/** The parsed workflow. Everything below reads it through here, so no test has
- *  its own idea of what the file says. */
-function workflow(): Workflow {
-  const parsed = parse(SOURCE) as Workflow | null;
-
-  expect(parsed, `${WORKFLOW} parses to nothing`).not.toBeNull();
-
-  return parsed!;
-}
-
-/** The workflow's trigger block. YAML 1.1 reads a bare `on` as the boolean
- *  `true`; this parser follows 1.2, where it stays a string. Both are read, so a
- *  change of parser default cannot quietly empty this out and pass. */
-function triggers(): Record<string, Trigger> {
-  const document = workflow();
-  const found = document['on'] ?? document['true'];
-
-  expect(found, `no trigger block in ${WORKFLOW}`).toBeDefined();
-
-  return found as Record<string, Trigger>;
-}
-
-/** The workflow's jobs, which the guard above holds to exactly one. */
-function jobs(): Record<string, Job> {
-  const { jobs } = workflow();
-
-  expect(jobs, `no jobs in ${WORKFLOW}`).toBeDefined();
-
-  return jobs!;
-}
-
-/** Every step, in the order they run. */
-function steps(): Step[] {
-  return Object.values(jobs()).flatMap((job) => job.steps ?? []);
-}
-
 /** Where the upload sits among the steps. Exactly one is expected: a second
  *  upload is a second chance to get `--branch` wrong. */
 function uploadAt(): number {
-  const found = steps().flatMap((step, at) => (/\bwrangler\b/.test(step.run ?? '') ? [at] : []));
+  const found = DEPLOY.steps().flatMap((step, at) => (/\bwrangler\b/.test(step.run ?? '') ? [at] : []));
 
   expect(found, `expected exactly one wrangler step in ${WORKFLOW}`).toHaveLength(1);
 
@@ -218,12 +185,12 @@ function uploadAt(): number {
 
 /** The step that replaces what Cloudflare serves. */
 function upload(): Step {
-  return steps()[uploadAt()]!;
+  return DEPLOY.steps()[uploadAt()]!;
 }
 
 /** The `with` block of the step that installs Node. */
-function setupNode(): Record<string, string> | undefined {
-  return steps().find((step) => step.uses?.startsWith('actions/setup-node@'))?.with;
+function setupNode(): Record<string, unknown> | undefined {
+  return DEPLOY.steps().find((step) => step.uses?.startsWith('actions/setup-node@'))?.with;
 }
 
 /** `astro.config.mjs` with its comments blanked, so the prose explaining what a
@@ -233,21 +200,3 @@ function astroConfig(): string {
     .replace(/\/\*[\s\S]*?\*\//g, ' ')
     .replace(/^\s*\/\/.*$/gm, ' ');
 }
-
-type Workflow = {
-  permissions?: unknown;
-  concurrency?: { group?: string; 'cancel-in-progress'?: boolean };
-  jobs?: Record<string, Job>;
-} & Record<string, unknown>;
-
-type Job = { steps?: Step[]; permissions?: unknown };
-
-type Step = {
-  run?: string;
-  uses?: string;
-  env?: Record<string, string>;
-  with?: Record<string, string>;
-};
-
-/** A trigger with no configuration — `workflow_dispatch:` — parses to null. */
-type Trigger = { branches?: string[] } | null;
