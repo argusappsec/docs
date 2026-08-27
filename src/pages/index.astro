@@ -265,7 +265,16 @@ const BEATS: readonly Beat[] = [
  * a panel listing tool names is a panel that eventually lies. Verbs do not go
  * stale, and `landing.test.ts` holds the page to it.
  */
-const ASKED = 'anything here I should fix before I open the pull request?';
+/**
+ * A toolbox exchange: your question, and your own client's answer. Deliberately
+ * not a `Message[]` — on this shape the answering voice is always the client, so
+ * there is no choice left for a `from` field to record, and naming the two halves
+ * says more than indexing them would.
+ */
+interface Exchange {
+  readonly asked: string;
+  readonly answered: string;
+}
 
 const ORCHESTRATION = [
   'ran the scanners over the checkout',
@@ -273,11 +282,26 @@ const ORCHESTRATION = [
   'read the context document it pointed to',
 ];
 
-/** The client's own, which is the point: on this shape the answer is not Argus's.
- *  Not a `Message` — the panel writes both speakers by hand, because the steps
- *  have to sit between them, so a `from` here would promise a choice nothing makes. */
-const ANSWERED =
-  'One thing. A token is hardcoded in the migration script. The other two hits are in the vendored SDK, which your team accepted twice already.';
+const ORCHESTRATED: Exchange = {
+  asked: 'anything here I should fix before I open the pull request?',
+  answered:
+    'One thing. A token is hardcoded in the migration script. The other two hits are in the vendored SDK, which your team accepted twice already.',
+};
+
+/**
+ * The same floor, asked by somebody else. Another client and another person, and
+ * the answer rests on something this person never told anybody: what the team
+ * settled once is what every later session starts from.
+ *
+ * A different mark in the panel's head is the whole of how the page says "not
+ * you this time", which is why the client here is deliberately not the one the
+ * floor's panel used.
+ */
+const SHARED: Exchange = {
+  asked: 'do I need to fix these two SDK findings?',
+  answered:
+    'No. Somebody on your team accepted them two months ago, and Argus still has the reason they gave.',
+};
 
 /**
  * The other side of the same protocol: not Argus asking a model, but a tool
@@ -471,8 +495,9 @@ const canonical = new URL('/', Astro.site);
       </section>
       {
         /* The floor, and the first step of the climb ADR 0013 argues for. Copy
-           right and panel left, so it alternates against the beats further down
-           without either having to know the other is there.
+           left and panel right, which is the story's default shape: the section
+           under it turns around, and from there the sides alternate all the way
+           down the page.
 
            It opens from the knowledge and not from the tools on purpose: three
            scanners are an afternoon's work for anybody, and a section that leads
@@ -480,7 +505,7 @@ const canonical = new URL('/', Astro.site);
            cannot be improvised is the memory. */
       }
       <section
-        class:list={['section', 'story', 'story-flip', isRaised('your-editor') && 'section-raised']}
+        class:list={['section', 'story', isRaised('your-editor') && 'section-raised']}
         id="your-editor"
         aria-labelledby="your-editor-heading"
       >
@@ -548,7 +573,7 @@ const canonical = new URL('/', Astro.site);
             <ol class="thread">
               <li class="message message-now" style="--at: 20%">
                 <p class="message-who">you</p>
-                <p class="message-says">{ASKED}</p>
+                <p class="message-says">{ORCHESTRATED.asked}</p>
               </li>
 
               {
@@ -566,7 +591,7 @@ const canonical = new URL('/', Astro.site);
                   </span>
                   {CLIENT_MARKS[0]!.title}
                 </p>
-                <p class="message-says">{ANSWERED}</p>
+                <p class="message-says">{ORCHESTRATED.answered}</p>
               </li>
             </ol>
           </div>
@@ -575,34 +600,66 @@ const canonical = new URL('/', Astro.site);
 
       {
         /* The other half of the floor, and the reason a team installs a daemon
-           instead of writing three integrations: one place to teach. No panel —
-           the argument is a sentence, and the page needs a breath between the
-           log above and the reel below. */
+           instead of writing three integrations: one place to teach. Panel left,
+           turning around against the section above it.
+
+           Its evidence is the same window again with a different mark on it, and
+           an answer nobody in this conversation supplied. Which is the argument:
+           the reasoning is each person's own, and the knowledge is not. */
       }
       <section
-        class:list={['section', isRaised('your-team') && 'section-raised']}
+        class:list={['section', 'story', 'story-flip', isRaised('your-team') && 'section-raised']}
         id="your-team"
         aria-labelledby="your-team-heading"
       >
-        <div class="shell">
-          <p class="eyebrow reveal">Your team</p>
-          <h2 class="heading reveal" id="your-team-heading">One Argus. Everyone's own AI.</h2>
+        <div class="shell story-inner">
+          <div class="story-copy">
+            <p class="eyebrow reveal">Your team</p>
+            <h2 class="heading reveal" id="your-team-heading">One Argus. Everyone's own AI.</h2>
 
-          <div class="prose reveal">
-            <p>
-              Point every developer's agent at one instance. The knowledge and the memory are
-              shared, so what one person settles is settled for the next session, the next
-              repository and the next person.
+            <div class="prose reveal">
+              <p>
+                Point every developer's agent at one instance. The knowledge and the memory are
+                shared, so what one person settles is settled for the next session, the next
+                repository and the next person.
+              </p>
+              <p>
+                The reasoning is not shared, and does not need to be. It happens on each machine,
+                under each person's own name, paid for by the subscription they already have.
+              </p>
+              <p class="claim">You are already paying for the reasoning.</p>
+              <p class="footnote">
+                What is shared is what Argus knows. Scanning stays close to the code, on the host
+                Argus itself runs on, which is what decides where an instance belongs.
+              </p>
+            </div>
+          </div>
+
+          <div class="panel reveal">
+            <p class="panel-head">
+              <span class="panel-mark" aria-hidden="true">
+                <VendorLogo mark={CLIENT_MARKS[2]!} size={13} />
+              </span>
+              <span class="panel-repo">{CLIENT_MARKS[2]!.title}</span>
+              <span class="chip chip-sm panel-protocol">mcp</span>
             </p>
-            <p>
-              The reasoning is not shared, and does not need to be. It happens on each machine,
-              under each person's own name, paid for by the subscription they already have.
-            </p>
-            <p class="claim">You are already paying for the reasoning.</p>
-            <p class="footnote">
-              What is shared is what Argus knows. Scanning stays close to the code, on the host
-              Argus itself runs on, which is what decides where an instance belongs.
-            </p>
+
+            <ol class="thread">
+              <li class="message message-now" style="--at: 26%">
+                <p class="message-who">you</p>
+                <p class="message-says">{SHARED.asked}</p>
+              </li>
+
+              <li class="message message-now" style="--at: 42%">
+                <p class="message-who">
+                  <span class="message-mark" aria-hidden="true">
+                    <VendorLogo mark={CLIENT_MARKS[2]!} size={14} />
+                  </span>
+                  {CLIENT_MARKS[2]!.title}
+                </p>
+                <p class="message-says">{SHARED.answered}</p>
+              </li>
+            </ol>
           </div>
         </div>
       </section>
@@ -610,7 +667,11 @@ const canonical = new URL('/', Astro.site);
       {
         /* The turn, and the page's one threshold: the only place it says out
            loud that what follows needs a model. Said once, here, because the
-           reader is already in "how do I run this" and nowhere else. */
+           reader is already in "how do I run this" and nowhere else.
+
+           It is a sentence and not a device: the page draws a rule to close the
+           hero and nowhere else, so a second one across a paragraph would read as
+           a stray divider rather than as a boundary. The words carry it. */
       }
       <section
         class:list={['section', isRaised('your-ai') && 'section-raised']}
@@ -623,9 +684,7 @@ const canonical = new URL('/', Astro.site);
             <h2 class="heading reveal" id="your-ai-heading">Give it a model of its own.</h2>
 
             <div class="prose reveal">
-              <p class="threshold">
-                Up to here Argus has needed no model of its own. Past here, it does.
-              </p>
+              <p>Up to here Argus has needed no model of its own. Past here, it does.</p>
               <p>
                 Add a provider and a toolbox becomes a colleague: the same daemon, one storey up.
                 Argus stops waiting to be asked, and what it does then is the rest of this page.
@@ -1749,19 +1808,6 @@ const canonical = new URL('/', Astro.site);
        * Gold as a rule rather than as type: on paper it is unreadable as a
        * foreground at 1.76, and a 2px band is the shape ADR 0004 gives it there.
        */
-      /*
-       * The page's one threshold, and it draws the line it talks about: a rule
-       * across the prose with the sentence under it, so the reader crosses the
-       * boundary and then reads why. Deliberately not the claim's shape — a claim
-       * is gold down the left, and this is not a claim, it is a border.
-       */
-      .threshold {
-        padding-top: 1rem;
-        border-top: 1px solid var(--color-border);
-        font-family: var(--font-mono);
-        font-size: 0.8125rem;
-      }
-
       .claim {
         padding-left: 1rem;
         border-left: 2px solid var(--color-accent);
