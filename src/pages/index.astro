@@ -4,6 +4,16 @@
  * make the Argument — scanners are precise but shallow, a model alone drowns the
  * signal, and the organization is the missing third ingredient — and hand off.
  *
+ * The middle of the page climbs, which is what ADR 0013 argues for: it starts
+ * where a reader can start today, with Argus serving its scanners and what the
+ * organization knows to the AI tool they already pay for, and then adds the model
+ * that makes it a Colleague. The hero deliberately does not carry that first
+ * step — a reader at the top has not yet learned that Argus uses a model, so
+ * "no model required" up there answers an objection nobody has raised.
+ *
+ * Toolbox and Colleague are the Guide's words, adopted rather than invented, and
+ * `agentless` is refused however well it would have fitted. ADR 0012 has both.
+ *
  * It restates the Argument in its own words, because an argument does not go
  * stale. It restates no Inventory: the scanners, the built-in skills, the
  * channels and the quick-start commands are all things that change as Argus
@@ -31,6 +41,7 @@ import { getCollection } from 'astro:content';
 import Mark from '../assets/brand/argus.svg';
 import GitHubMark from '../components/GitHubMark.astro';
 import VendorLogo from '../components/VendorLogo.astro';
+import { raisedIn } from '../landing/bands';
 import { GUIDE_ROOT, guideHandoff } from '../landing/handoff';
 import { CLIENT_MARKS, PROVIDER_MARKS } from '../landing/vendor-marks';
 import '../styles/global.css';
@@ -46,9 +57,38 @@ const REPOSITORY = 'https://github.com/argusappsec/argus';
 const SECURITY_CONTACT = 'security@argusappsec.com';
 
 const TITLE = 'Argus — an application security agent that knows your organization';
+/**
+ * The line a search result and a shared link show, which for a stranger is often
+ * the only line they read. So it carries the thesis and the first step, and stops
+ * there: past about 160 characters it is truncated, and a truncated argument is
+ * an argument the reader never sees the end of.
+ */
 const DESCRIPTION =
-  'Argus is an open-source application security agent. It reviews your code ' +
-  'against your own stack, risk tolerance and exceptions, and answers when you disagree.';
+  'An open-source application security agent that knows your organization. ' +
+  'Point the AI you already pay for at it, or give it a model of its own.';
+
+/**
+ * The sections, in the order the page renders them. Written down once because
+ * the raised band alternates over the *sequence* rather than being chosen per
+ * section — see `src/landing/bands.ts` for why that is a rule and not a habit.
+ *
+ * Reordering the page is moving markup and moving an id here. Every section asks
+ * whether it is raised, and asking about a section this list does not name throws,
+ * so the two cannot drift apart without the build saying so.
+ */
+const ORDER = [
+  'hero',
+  'your-editor',
+  'your-team',
+  'your-ai',
+  'reviews',
+  'learns',
+  'answers',
+  'ask-argus',
+  'trust',
+] as const;
+
+const isRaised = raisedIn(ORDER);
 
 /**
  * The hero's thesis, as a conversation: the finding a scanner cannot reach,
@@ -203,7 +243,7 @@ const BEATS: readonly Beat[] = [
     eyebrow: 'The argument',
     title: 'Argue with it.',
     lede: 'A report is a list. This one answers, moves its own finding when you give it a reason, and says so when you are wrong.',
-    claim: 'A colleague, not a toolbox.',
+    claim: 'It answers. A report cannot.',
     code: ANCHOR,
     messages: [
       { ...CORRECTION, state: 'past' },
@@ -215,13 +255,30 @@ const BEATS: readonly Beat[] = [
 
 
 /**
- * What the page says about its own boundaries, which for a tool that reads a
- * stranger's pull request is the section a security reader actually opens.
+ * The floor's evidence: your own AI tool asking Argus, doing the deterministic
+ * half through it, and answering you itself. The one panel on the page that shows
+ * work rather than speech, which is the only honest way to draw a shape whose
+ * reasoning belongs to somebody else.
  *
- * All three are transcribed from the Guide's own security posture and go no
- * further: each is a promise the code has to keep, so none of them is a sentence
- * this page is free to improve on.
+ * The steps say what happened and name nothing. What Argus serves over MCP is an
+ * Inventory — the surface gained the scanners days before this was written — and
+ * a panel listing tool names is a panel that eventually lies. Verbs do not go
+ * stale, and `landing.test.ts` holds the page to it.
  */
+const ASKED = 'anything here I should fix before I open the pull request?';
+
+const ORCHESTRATION = [
+  'ran the scanners over the checkout',
+  'read what your organization has settled before',
+  'read the context document it pointed to',
+];
+
+/** The client's own, which is the point: on this shape the answer is not Argus's.
+ *  Not a `Message` — the panel writes both speakers by hand, because the steps
+ *  have to sit between them, so a `from` here would promise a choice nothing makes. */
+const ANSWERED =
+  'One thing. A token is hardcoded in the migration script. The other two hits are in the vendored SDK, which your team accepted twice already.';
+
 /**
  * The other side of the same protocol: not Argus asking a model, but a tool
  * asking Argus. Which is why the reader is watching their own assistant here —
@@ -243,11 +300,19 @@ const CONSULT: readonly Message[] = [
   },
 ];
 
+/**
+ * What the page says about its own boundaries, which for a tool that reads a
+ * stranger's pull request is the section a security reader actually opens.
+ *
+ * All three are transcribed from the Guide's own security posture and go no
+ * further: each is a promise the code has to keep, so none of them is a sentence
+ * this page is free to improve on.
+ */
 const GUARDS = [
   {
-    title: 'A pull request cannot give orders.',
+    title: 'What it knows stays where it runs.',
     detail:
-      'The code under review is data. Nothing it contains directs the agent, and nothing it says is written back to what your organization knows.',
+      'Your identity, memory and context documents never leave your instance, and anything Argus posts in public has to be grounded in the tree it just read.',
   },
   {
     title: 'Scanners never leave the checkout.',
@@ -255,9 +320,9 @@ const GUARDS = [
       'Review tools read the tree they were pointed at, not the machine Argus runs on.',
   },
   {
-    title: 'What it knows stays where it runs.',
+    title: 'A pull request cannot give orders.',
     detail:
-      'Your identity, memory and context documents never leave your instance, and anything Argus posts in public has to be grounded in the tree it just read.',
+      'The code under review is data. Nothing it contains directs the agent, and nothing it says is written back to what your organization knows.',
   },
 ];
 
@@ -328,9 +393,10 @@ const canonical = new URL('/', Astro.site);
         </a>
 
         <nav class="nav" aria-label="Sections of this page">
+          <a href="#your-editor">Your editor</a>
+          <a href="#your-ai">Your AI</a>
           <a href="#reviews">How it works</a>
           <a href="#trust">Trust</a>
-          <a href="#your-ai">Your AI</a>
         </nav>
 
         <div class="topbar-end">
@@ -344,7 +410,7 @@ const canonical = new URL('/', Astro.site);
     </header>
 
     <main id="main">
-      <section class="section hero">
+      <section class:list={['section', 'hero', isRaised('hero') && 'section-raised']}>
         <span class="rings" aria-hidden="true"></span>
         <span class="sweep" aria-hidden="true"></span>
         <span class="blip blip-1" aria-hidden="true"></span>
@@ -403,10 +469,214 @@ const canonical = new URL('/', Astro.site);
           </div>
         </div>
       </section>
+      {
+        /* The floor, and the first step of the climb ADR 0013 argues for. Copy
+           right and panel left, so it alternates against the beats further down
+           without either having to know the other is there.
+
+           It opens from the knowledge and not from the tools on purpose: three
+           scanners are an afternoon's work for anybody, and a section that leads
+           with them reads as a wrapper around somebody else's binaries. What
+           cannot be improvised is the memory. */
+      }
+      <section
+        class:list={['section', 'story', 'story-flip', isRaised('your-editor') && 'section-raised']}
+        id="your-editor"
+        aria-labelledby="your-editor-heading"
+      >
+        <div class="shell story-inner">
+          <div class="story-copy">
+            <p class="eyebrow reveal">Your editor</p>
+            <h2 class="heading reveal" id="your-editor-heading">
+              Your AI doesn't know your organization.
+            </h2>
+
+            <div class="prose reveal">
+              <p>
+                It knows the language and the framework. It does not know which of last week's
+                findings your team already accepted, or what the payload in this service is allowed
+                to carry. Argus knows both, and serves what it knows to whatever AI tool you already
+                have open.
+              </p>
+              <p>
+                It runs the scanners as well, so what your agent reads was measured rather than
+                guessed.
+              </p>
+              <p class="claim">Your agent does the reasoning.</p>
+              <p>
+                Give Argus no model of its own and this is all of it: a toolbox. That is a floor,
+                not a trial.
+              </p>
+            </div>
+
+            <ul class="pills reveal">
+              {
+                CLIENT_MARKS.map((mark) => (
+                  <li class="pill">
+                    <VendorLogo mark={mark} size={16} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+              <li class="pill pill-open">anything that speaks MCP</li>
+            </ul>
+
+            <div class="prose reveal pills-note">
+              <p class="footnote">
+                Examples of clients, not a supported list. The protocol is the contract, and Argus
+                certifies nobody's client.
+              </p>
+              <p><a href="/guide/deployment-shapes/">The two shapes, and which one you run</a></p>
+            </div>
+          </div>
+
+          {
+            /* The evidence, and the one thing on the page that shows work rather
+               than speech: your own client asking, Argus doing the deterministic
+               half, and the answer coming back in your client's own voice. The
+               steps say what happened and name nothing — see `ORCHESTRATION`. */
+          }
+          <div class="panel reveal">
+            <p class="panel-head">
+              <span class="panel-mark" aria-hidden="true">
+                <VendorLogo mark={CLIENT_MARKS[0]!} size={13} />
+              </span>
+              <span class="panel-repo">{CLIENT_MARKS[0]!.title}</span>
+              <span class="chip chip-sm panel-protocol">mcp</span>
+            </p>
+
+            <ol class="thread">
+              <li class="message message-now" style="--at: 20%">
+                <p class="message-who">you</p>
+                <p class="message-says">{ASKED}</p>
+              </li>
+
+              {
+                ORCHESTRATION.map((step, index) => (
+                  <li class="step" style={`--at: ${34 + index * 7}%`}>
+                    {step}
+                  </li>
+                ))
+              }
+
+              <li class="message message-now" style="--at: 60%">
+                <p class="message-who">
+                  <span class="message-mark" aria-hidden="true">
+                    <VendorLogo mark={CLIENT_MARKS[0]!} size={14} />
+                  </span>
+                  {CLIENT_MARKS[0]!.title}
+                </p>
+                <p class="message-says">{ANSWERED}</p>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
 
       {
-        /* Every other beat turns around and stands on the raised band, so the
-           page alternates without any beat having to know where it sits. */
+        /* The other half of the floor, and the reason a team installs a daemon
+           instead of writing three integrations: one place to teach. No panel —
+           the argument is a sentence, and the page needs a breath between the
+           log above and the reel below. */
+      }
+      <section
+        class:list={['section', isRaised('your-team') && 'section-raised']}
+        id="your-team"
+        aria-labelledby="your-team-heading"
+      >
+        <div class="shell">
+          <p class="eyebrow reveal">Your team</p>
+          <h2 class="heading reveal" id="your-team-heading">One Argus. Everyone's own AI.</h2>
+
+          <div class="prose reveal">
+            <p>
+              Point every developer's agent at one instance. The knowledge and the memory are
+              shared, so what one person settles is settled for the next session, the next
+              repository and the next person.
+            </p>
+            <p>
+              The reasoning is not shared, and does not need to be. It happens on each machine,
+              under each person's own name, paid for by the subscription they already have.
+            </p>
+            <p class="claim">You are already paying for the reasoning.</p>
+            <p class="footnote">
+              What is shared is what Argus knows. Scanning stays close to the code, on the host
+              Argus itself runs on, which is what decides where an instance belongs.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {
+        /* The turn, and the page's one threshold: the only place it says out
+           loud that what follows needs a model. Said once, here, because the
+           reader is already in "how do I run this" and nowhere else. */
+      }
+      <section
+        class:list={['section', isRaised('your-ai') && 'section-raised']}
+        id="your-ai"
+        aria-labelledby="your-ai-heading"
+      >
+        <div class="shell split">
+          <div class="split-main">
+            <p class="eyebrow reveal">Your AI</p>
+            <h2 class="heading reveal" id="your-ai-heading">Give it a model of its own.</h2>
+
+            <div class="prose reveal">
+              <p class="threshold">
+                Up to here Argus has needed no model of its own. Past here, it does.
+              </p>
+              <p>
+                Add a provider and a toolbox becomes a colleague: the same daemon, one storey up.
+                Argus stops waiting to be asked, and what it does then is the rest of this page.
+              </p>
+              <p>
+                Argus ships no model. Point it at whatever speaks the protocol: a hosted API, or
+                something running on hardware you own.
+              </p>
+              <p>
+                Nothing to migrate either. Your knowledge, your memory, your people and your tokens
+                were never provider-specific, so it is a restart rather than a reinstall.
+              </p>
+              <p class="claim">Run it on your own machines and your code never leaves them.</p>
+              <p class="footnote">
+                Examples of servers that speak the protocol, not a supported list. Argus implements
+                the protocol and certifies nobody's server.
+              </p>
+              <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
+            </div>
+          </div>
+
+          <div class="reel reveal">
+            <ul class="reel-column">
+              {
+                PROVIDER_MARKS.map((mark) => (
+                  <li class="reel-item">
+                    <VendorLogo mark={mark} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+            </ul>
+            <ul class="reel-column" aria-hidden="true">
+              {
+                PROVIDER_MARKS.map((mark) => (
+                  <li class="reel-item">
+                    <VendorLogo mark={mark} />
+                    {mark.title}
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {
+        /* Every other beat turns around, so the story alternates sides. The
+           band is a separate question now: the beats no longer open the page, so
+           the section that flips is not the section that rises. Both answers stay
+           positional, and neither beat has to know where it sits. */
         BEATS.map((beat, beatIndex) => {
           const at = stagger(beat);
 
@@ -415,7 +685,8 @@ const canonical = new URL('/', Astro.site);
             class:list={[
               'section',
               'story',
-              beatIndex % 2 === 1 && ['story-flip', 'section-raised'],
+              beatIndex % 2 === 1 && 'story-flip',
+              isRaised(beat.id) && 'section-raised',
             ]}
             id={beat.id}
             aria-labelledby={`${beat.id}-heading`}
@@ -514,99 +785,43 @@ const canonical = new URL('/', Astro.site);
           );
         })
       }
-
       {
-        /*
-         * The reader has just watched Argus read a pull request, which is the
-         * moment the question changes: not "does it find things" but "what else
-         * does it do while it is in there". For anything that reads a stranger's
-         * branch and then writes in public, that is the question that decides
-         * whether the rest of the page matters.
-         *
-         * A benchmark used to stand here. It was one deliberately broken app and
-         * one class of flaw, which is a fine thing to have measured and a poor
-         * thing to headline: a figure a reader cannot check is an invitation to
-         * argue with the figure. These three are checkable — every one of them is
-         * a promise in the code, on the page it is documented on.
-         */
-      }
-      <section class="section section-raised" id="trust" aria-labelledby="trust-heading">
-        <div class="shell">
-          <p class="eyebrow reveal">Trust</p>
-          <h2 class="heading reveal" id="trust-heading">It reads your branch. Here is the rest.</h2>
+        /* The question half, and the same window as the floor two acts up: what
+           changed between them is who answers. Panel left, so it alternates
+           against the last beat.
 
-          <ul class="guards">
-            {
-              GUARDS.map(({ title, detail }) => (
-                <li class="guard reveal">
-                  <h3 class="guard-title">{title}</h3>
-                  <p class="guard-body">{detail}</p>
-                </li>
-              ))
-            }
-          </ul>
-
-          <div class="prose reveal guards-note">
-            <p>
-              Apache 2.0, and it runs on your own infrastructure. Which is the only claim on this
-              page that matters: read it, run it on a repository you own, and judge it there.
-            </p>
-            <p><a href="/guide/channels/github/">What a review is allowed to do</a></p>
-          </div>
-        </div>
-      </section>
-
-      {
-        /* Two columns, panel on the left, which is the shape the middle beat has
-           — so this alternates against the section under it instead of making a
-           third "copy left, thing right" in a row. */
+           Split out of the tools section it used to share, because that section
+           is now the Toolbox and this is a Colleague-only capability: the Guide's
+           MCP channel serves `consult` on a colleague and not on a toolbox, so a
+           toolbox section demonstrating it would have been showing the one thing
+           the shape cannot do. */
       }
       <section
-        class="section story story-flip"
-        id="your-tools"
-        aria-labelledby="your-tools-heading"
+        class:list={['section', 'story', 'story-flip', isRaised('ask-argus') && 'section-raised']}
+        id="ask-argus"
+        aria-labelledby="ask-argus-heading"
       >
         <div class="shell story-inner">
           <div class="story-copy">
-            <p class="eyebrow reveal">Your tools</p>
-            <h2 class="heading reveal" id="your-tools-heading">
-              Ask it from the AI you already use.
-            </h2>
+            <p class="eyebrow reveal">The question</p>
+            <h2 class="heading reveal" id="ask-argus-heading">Now ask Argus itself.</h2>
 
             <div class="prose reveal">
               <p>
-                Argus speaks MCP, so the assistant already open on your machine can consult it. It
-                hands over the question, Argus answers out of what your organization knows, and the
-                answer arrives where you were working.
+                Your editor again, and the same protocol. What is different is who answers: you
+                hand the question over, and Argus answers it out of what your organization knows.
               </p>
               <p class="claim">Your organization's knowledge never leaves Argus.</p>
-            </div>
-
-            <ul class="pills reveal">
-              {
-                CLIENT_MARKS.map((mark) => (
-                  <li class="pill">
-                    <VendorLogo mark={mark} size={16} />
-                    {mark.title}
-                  </li>
-                ))
-              }
-              <li class="pill pill-open">anything that speaks MCP</li>
-            </ul>
-
-            <div class="prose reveal pills-note">
-              <p class="footnote">
-                Examples of clients, not a supported list. The protocol is the contract, and Argus
-                certifies nobody's client.
-              </p>
               <p><a href="/guide/channels/mcp/">How the MCP channel works</a></p>
             </div>
           </div>
 
           {
-            /* The same panel the story uses, because it is the same kind of
-               evidence — only the surface changed, from a pull request to
-               whatever editor the reader already has open. */
+            /* Deliberately the same panel as the floor's, down to the head: it is
+               the same window on the same protocol, and the argument is that only
+               the answer changed. Written out twice rather than extracted, because
+               Astro scopes a stylesheet to its own component and every class in
+               here is defined in this page's. */
           }
           <div class="panel reveal">
             <p class="panel-head">
@@ -638,47 +853,47 @@ const canonical = new URL('/', Astro.site);
         </div>
       </section>
 
-      <section class="section section-raised" id="your-ai" aria-labelledby="your-ai-heading">
-        <div class="shell split">
-          <div class="split-main">
-            <p class="eyebrow reveal">Your AI</p>
-            <h2 class="heading reveal" id="your-ai-heading">Use your own AI.</h2>
+      {
+        /*
+         * The reader has just watched Argus read a pull request, which is the
+         * moment the question changes: not "does it find things" but "what else
+         * does it do while it is in there". For anything that reads a stranger's
+         * branch and then writes in public, that is the question that decides
+         * whether the rest of the page matters.
+         *
+         * A benchmark used to stand here. It was one deliberately broken app and
+         * one class of flaw, which is a fine thing to have measured and a poor
+         * thing to headline: a figure a reader cannot check is an invitation to
+         * argue with the figure. These three are checkable — every one of them is
+         * a promise in the code, on the page it is documented on.
+         */
+      }
+      <section
+        class:list={['section', isRaised('trust') && 'section-raised']}
+        id="trust"
+        aria-labelledby="trust-heading"
+      >
+        <div class="shell">
+          <p class="eyebrow reveal">Trust</p>
+          <h2 class="heading reveal" id="trust-heading">It reads your branch. Here is the rest.</h2>
 
-            <div class="prose reveal">
-              <p>
-                Argus ships no model. Point it at whatever speaks the protocol: a hosted API, or
-                something running on hardware you own.
-              </p>
-              <p class="claim">Run it on your own machines and your code never leaves them.</p>
-              <p class="footnote">
-                Examples of servers that speak it, not a supported list. Argus implements the
-                protocol and certifies nobody's server.
-              </p>
-              <p><a href="/guide/llm-providers/">What Argus needs from a model</a></p>
-            </div>
-          </div>
+          <ul class="guards">
+            {
+              GUARDS.map(({ title, detail }) => (
+                <li class="guard reveal">
+                  <h3 class="guard-title">{title}</h3>
+                  <p class="guard-body">{detail}</p>
+                </li>
+              ))
+            }
+          </ul>
 
-          <div class="reel reveal">
-            <ul class="reel-column">
-              {
-                PROVIDER_MARKS.map((mark) => (
-                  <li class="reel-item">
-                    <VendorLogo mark={mark} />
-                    {mark.title}
-                  </li>
-                ))
-              }
-            </ul>
-            <ul class="reel-column" aria-hidden="true">
-              {
-                PROVIDER_MARKS.map((mark) => (
-                  <li class="reel-item">
-                    <VendorLogo mark={mark} />
-                    {mark.title}
-                  </li>
-                ))
-              }
-            </ul>
+          <div class="prose reveal guards-note">
+            <p>
+              Apache 2.0, and it runs on your own infrastructure. Which is the only claim on this
+              page that matters: read it, run it on a repository you own, and judge it there.
+            </p>
+            <p><a href="/guide/channels/github/">What a review is allowed to do</a></p>
           </div>
         </div>
       </section>
@@ -1438,6 +1653,21 @@ const canonical = new URL('/', Astro.site);
         background-color: var(--color-surface);
       }
 
+      /*
+       * Work rather than speech: no card, no fill, and a rule in `primary` down
+       * the left. The two messages either side of them are boxes, so the run of
+       * steps between reads as the machine part of the exchange without anything
+       * having to say so.
+       */
+      .step {
+        padding: 0.1rem 0 0.1rem 0.75rem;
+        border-left: 2px solid var(--color-primary);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        line-height: 1.7;
+        color: var(--color-text-muted);
+      }
+
       .message-past {
         background-color: transparent;
         color: var(--color-text-muted);
@@ -1519,6 +1749,19 @@ const canonical = new URL('/', Astro.site);
        * Gold as a rule rather than as type: on paper it is unreadable as a
        * foreground at 1.76, and a 2px band is the shape ADR 0004 gives it there.
        */
+      /*
+       * The page's one threshold, and it draws the line it talks about: a rule
+       * across the prose with the sentence under it, so the reader crosses the
+       * boundary and then reads why. Deliberately not the claim's shape — a claim
+       * is gold down the left, and this is not a claim, it is a border.
+       */
+      .threshold {
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+        font-family: var(--font-mono);
+        font-size: 0.8125rem;
+      }
+
       .claim {
         padding-left: 1rem;
         border-left: 2px solid var(--color-accent);
@@ -1907,6 +2150,7 @@ const canonical = new URL('/', Astro.site);
           }
 
           .code-line,
+          .step,
           .message-now,
           .remembered {
             animation-name: land;

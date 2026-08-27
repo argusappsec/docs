@@ -37,6 +37,31 @@ The repository-root `docs/` directory: skill configuration and this
 repository's ADRs. Unrelated to the Mirror despite the shared word.
 _Avoid_: docs (unqualified), the docs folder
 
+## The product
+
+The three terms this repository does not own but has to speak, because a word
+that means one thing in the Guide and another on the Landing is how a site
+starts contradicting itself. All three are authoritative in the Guide, under
+`deployment-shapes`.
+
+**Shape**:
+Which of the two forms an Argus installation is running in, derived from one
+fact: whether an LLM provider is configured. Never picked by a setting, so the
+Landing describes Shapes rather than offering a choice between them.
+_Avoid_: mode, tier, plan, edition
+
+**Toolbox**:
+The Shape with no provider configured. Argus serves its scanners, the
+organization's knowledge, its memory and its skills, and the reader's own AI
+tool does the reasoning. The floor, and never a trial or a crippled mode.
+_Avoid_: agentless, tooling mode, free tier, MCP-only
+
+**Colleague**:
+The Shape with a provider configured. Everything a Toolbox serves, plus Argus
+reasoning on its own behalf. A storey above a Toolbox, never a different
+building.
+_Avoid_: agentic mode, full version, pro
+
 ## The landing
 
 **Landing**:

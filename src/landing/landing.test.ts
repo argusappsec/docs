@@ -136,7 +136,102 @@ describe('the Landing', () => {
       expect(value, `${property}: ${value}`).toMatch(/var\(--color-/);
     }
   });
+
+  it('uses none of the words the glossary refuses for the product\'s own terms', () => {
+    // The Landing has to speak Toolbox and Colleague, and it does not own them:
+    // they are the Guide's words. `CONTEXT.md` is where that is written down,
+    // including the words each one is *not* — so the list is read out of the
+    // glossary rather than copied here, and adding a trap there arms this test
+    // with no edit. ADR 0012 is the one that matters: `agentless` already means
+    // "nothing installed on the host" to this page's audience, and a Toolbox is
+    // a daemon on the machine the code is on.
+    const refused = glossaryAvoids('The product');
+
+    expect(refused, 'no `_Avoid_` under `## The product` — has the glossary moved?').not.toHaveLength(
+      0,
+    );
+
+    for (const word of refused) {
+      const used = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      expect(copy(), `the glossary refuses \`${word}\``).not.toMatch(used);
+    }
+  });
+
+  it('names both shapes the Guide names', () => {
+    // The other half of the same rule, and the half that goes wrong quietly.
+    // ADR 0012 adopts Toolbox and Colleague *because* this page has to speak
+    // them, and a page that refuses `agentless` while never saying `colleague`
+    // has kept the letter of that and dropped the point. The word only ever
+    // reached the page inside one claim, so deleting the claim deleted the
+    // vocabulary — which is what happened, and what this now catches.
+    for (const shape of ['toolbox', 'colleague']) {
+      expect(copy(), `ADR 0012 adopts \`${shape}\`, and the page never says it`).toMatch(
+        new RegExp(`\\b${shape}\\b`, 'i'),
+      );
+    }
+  });
+
+  it('writes no snake_case name anywhere in its copy', () => {
+    // The Inventory rule, over the one class of name that always breaks it. An
+    // MCP tool, a config key and an environment variable are all snake_case,
+    // and all three are enumerations Argus changes without telling this
+    // repository — the tool surface gained the scanners the week this page was
+    // last rewritten. So the page describes what happened in verbs and names
+    // none of them; a link goes to the Guide, which owns the list.
+    expect(copy()).not.toMatch(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/);
+  });
+
+  it('renders every section its declared order names', () => {
+    // `bandOf` fails the build on a section the order does not name. This is
+    // the other direction, which nothing at build time can see: an id left in
+    // the order after its section went shifts the band of every section under
+    // it, and the page still renders.
+    const declaration = /const ORDER = \[([\s\S]*?)\] as const;/.exec(SOURCE);
+
+    expect(declaration, 'the Landing declares no section order').not.toBeNull();
+
+    const declared = [...declaration![1]!.matchAll(/'([^']+)'/g)].map(([, id]) => id!);
+    // Everything past the declaration, and never the declaration itself: the
+    // ids are written there, so a search that included it would find each one
+    // in its own definition and pass whatever the page renders.
+    const rest = SOURCE.slice(declaration!.index + declaration![0].length);
+
+    expect(declared, 'the Landing declares an empty section order').not.toHaveLength(0);
+
+    for (const id of declared) {
+      expect(rest, `\`${id}\` is declared and never rendered`).toContain(id);
+    }
+  });
 });
+
+/**
+ * Everything on the page that can carry a word the reader sees: its markup and
+ * the frontmatter its copy is declared in, with the stylesheet and the comments
+ * taken out. A comment explaining why a word is refused must not itself read as
+ * the page using that word — the same reason `stylesheet()` below blanks them.
+ *
+ * Not prose, and deliberately not: most of the copy is declared in TypeScript, so
+ * anything narrower than this would police the half of the page that happens to
+ * be markup and leave the half that is data alone.
+ */
+function copy(): string {
+  return SOURCE.replace(/<style>[\s\S]*?<\/style>/g, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/^[ \t]*\/\/.*$/gm, ' ');
+}
+
+/** The `_Avoid_` words under one heading of the glossary, in the order written. */
+function glossaryAvoids(heading: string): string[] {
+  const context = readFileSync(join(REPO_ROOT, 'CONTEXT.md'), 'utf8');
+  const section = new RegExp(`^## ${heading}$([\\s\\S]*?)(?=^## |\\Z)`, 'm').exec(context)?.[1];
+
+  expect(section, `CONTEXT.md has no \`## ${heading}\``).toBeDefined();
+
+  return [...section!.matchAll(/^_Avoid_:(.*)$/gm)]
+    .flatMap(([, list]) => list!.split(','))
+    .map((word) => word.trim())
+    .filter((word) => word !== '');
+}
 
 /** The Landing's stylesheet with its comments blanked, so the prose explaining
  *  why gold fills in light is never mistaken for a colour value. */
