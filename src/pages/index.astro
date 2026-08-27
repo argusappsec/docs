@@ -518,20 +518,14 @@ const canonical = new URL('/', Astro.site);
 
             <div class="prose reveal">
               <p>
-                It knows the language and the framework. It does not know which of last week's
-                findings your team already accepted, or what the payload in this service is allowed
-                to carry. Argus knows both, and serves what it knows to whatever AI tool you already
-                have open.
+                It knows the language. It does not know which findings your team already accepted,
+                or what this service's payloads may carry.
               </p>
               <p>
-                It runs the scanners as well, so what your agent reads was measured rather than
-                guessed.
+                Argus knows both, and runs real scanners rather than guessing. With no model
+                configured, that is the whole of it: a toolbox.
               </p>
               <p class="claim">Your agent does the reasoning.</p>
-              <p>
-                Give Argus no model of its own and this is all of it: a toolbox. That is a floor,
-                not a trial.
-              </p>
             </div>
 
             <ul class="pills reveal">
@@ -671,7 +665,9 @@ const canonical = new URL('/', Astro.site);
 
            It is a sentence and not a device: the page draws a rule to close the
            hero and nowhere else, so a second one across a paragraph would read as
-           a stray divider rather than as a boundary. The words carry it. */
+           a stray divider rather than as a boundary. And it opens the sentence
+           that turns rather than standing alone, because a threshold nobody
+           crosses in the same breath is just a warning. */
       }
       <section
         class:list={['section', isRaised('your-ai') && 'section-raised']}
@@ -684,18 +680,13 @@ const canonical = new URL('/', Astro.site);
             <h2 class="heading reveal" id="your-ai-heading">Give it a model of its own.</h2>
 
             <div class="prose reveal">
-              <p>Up to here Argus has needed no model of its own. Past here, it does.</p>
               <p>
-                Add a provider and a toolbox becomes a colleague: the same daemon, one storey up.
-                Argus stops waiting to be asked, and what it does then is the rest of this page.
+                Up to here Argus has needed no model of its own. Past here it does: add a provider
+                and a toolbox becomes a colleague, the same daemon one storey up.
               </p>
               <p>
-                Argus ships no model. Point it at whatever speaks the protocol: a hosted API, or
-                something running on hardware you own.
-              </p>
-              <p>
-                Nothing to migrate either. Your knowledge, your memory, your people and your tokens
-                were never provider-specific, so it is a restart rather than a reinstall.
+                Argus ships none. Point it at whatever speaks the protocol, hosted or on hardware
+                you own, and nothing else about your instance changes.
               </p>
               <p class="claim">Run it on your own machines and your code never leaves them.</p>
               <p class="footnote">
